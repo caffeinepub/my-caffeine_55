@@ -19,6 +19,11 @@ export const FaqEntry = IDL.Record({
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const Time = IDL.Int;
+export const MamaFeedbackMetadata = IDL.Record({
+  'explanation' : IDL.Text,
+  'userPrompt' : IDL.Text,
+  'category' : IDL.Text,
+});
 export const Message = IDL.Record({
   'content' : IDL.Text,
   'author' : IDL.Principal,
@@ -30,11 +35,41 @@ export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addFaqEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'clearFeedbackMetadata' : IDL.Func([], [], []),
   'findFaqMatch' : IDL.Func([IDL.Text], [IDL.Opt(FaqEntry)], ['query']),
+  'getAllCategoryStats' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64, IDL.Nat))],
+      ['query'],
+    ),
+  'getAllCategoryTotalsByUser' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64))],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getCategoryStats' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Opt(
+          IDL.Record({
+            'count' : IDL.Nat,
+            'recentTimestamps' : IDL.Vec(Time),
+            'averageScore' : IDL.Float64,
+          })
+        ),
+      ],
+      ['query'],
+    ),
   'getChatStats' : IDL.Func([], [IDL.Nat, IDL.Nat, IDL.Nat], ['query']),
+  'getFeedbackMetadata' : IDL.Func(
+      [],
+      [IDL.Opt(MamaFeedbackMetadata)],
+      ['query'],
+    ),
   'getNewPublicMessages' : IDL.Func([], [IDL.Vec(Message)], []),
+  'getPppOptIn' : IDL.Func([], [IDL.Bool], ['query']),
   'getPrivateMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
   'getPublicMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
   'getUserProfile' : IDL.Func(
@@ -44,8 +79,11 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveFeedbackMetadata' : IDL.Func([MamaFeedbackMetadata], [], []),
   'searchFaqsByKeyword' : IDL.Func([IDL.Text], [IDL.Vec(FaqEntry)], ['query']),
   'sendMessage' : IDL.Func([IDL.Text, IDL.Bool], [], []),
+  'setPppOptIn' : IDL.Func([IDL.Bool], [], []),
+  'storeAnonymizedSignal' : IDL.Func([IDL.Text, IDL.Float64], [], []),
 });
 
 export const idlInitArgs = [];
@@ -59,6 +97,11 @@ export const idlFactory = ({ IDL }) => {
   const FaqEntry = IDL.Record({ 'question' : IDL.Text, 'answer' : IDL.Text });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const Time = IDL.Int;
+  const MamaFeedbackMetadata = IDL.Record({
+    'explanation' : IDL.Text,
+    'userPrompt' : IDL.Text,
+    'category' : IDL.Text,
+  });
   const Message = IDL.Record({
     'content' : IDL.Text,
     'author' : IDL.Principal,
@@ -70,11 +113,41 @@ export const idlFactory = ({ IDL }) => {
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addFaqEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'clearFeedbackMetadata' : IDL.Func([], [], []),
     'findFaqMatch' : IDL.Func([IDL.Text], [IDL.Opt(FaqEntry)], ['query']),
+    'getAllCategoryStats' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64, IDL.Nat))],
+        ['query'],
+      ),
+    'getAllCategoryTotalsByUser' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64))],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getCategoryStats' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Opt(
+            IDL.Record({
+              'count' : IDL.Nat,
+              'recentTimestamps' : IDL.Vec(Time),
+              'averageScore' : IDL.Float64,
+            })
+          ),
+        ],
+        ['query'],
+      ),
     'getChatStats' : IDL.Func([], [IDL.Nat, IDL.Nat, IDL.Nat], ['query']),
+    'getFeedbackMetadata' : IDL.Func(
+        [],
+        [IDL.Opt(MamaFeedbackMetadata)],
+        ['query'],
+      ),
     'getNewPublicMessages' : IDL.Func([], [IDL.Vec(Message)], []),
+    'getPppOptIn' : IDL.Func([], [IDL.Bool], ['query']),
     'getPrivateMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
     'getPublicMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
     'getUserProfile' : IDL.Func(
@@ -84,12 +157,15 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveFeedbackMetadata' : IDL.Func([MamaFeedbackMetadata], [], []),
     'searchFaqsByKeyword' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(FaqEntry)],
         ['query'],
       ),
     'sendMessage' : IDL.Func([IDL.Text, IDL.Bool], [], []),
+    'setPppOptIn' : IDL.Func([IDL.Bool], [], []),
+    'storeAnonymizedSignal' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   });
 };
 

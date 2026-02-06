@@ -1,53 +1,51 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T06:05:00.917Z",
-  "summary": "Diff adds a new deterministic 7-step per-message pipeline runner and a 7-step “heartbeat” progress indicator, and wires the pipeline into ChatPage’s send flow. Structured feedback is produced by the pipeline and stored in ChatPage state, but the diff excerpt does not conclusively show feedback rendering or full step-failure state transitions.",
+  "generatedAt": "2026-02-06T07:02:52.754Z",
+  "summary": "Diff adds a Private Chat opt-in toggle UI and a frontend-only anonymized signal derivation utility, plus wiring hooks/usages suggesting PPP integration and public-chat variety seeding. However, the provided backend diff snippet does not show the required new authenticated APIs for opt-in preference, signal ingestion, or aggregate querying, and the mamaPipeline diff snippet is truncated before any verifiable anti-repetition behavior or the required Persian trigger phrase inclusion.",
   "missing_requirements": [
     {
-      "id": "REQ-25",
-      "requirement": "If an error happens during any step, the UI surfaces the failure state (pending → active → completed, and failed if an error occurs) and existing error toast behavior remains intact.",
-      "reason": "The indicator component can render a failed state, but the pipeline runner excerpt does not show any logic that marks a step as 'failed' when an error occurs (it often records an error summary but still sets step 3 to 'completed'). Without explicit 'failed' transitions, the UI may not be able to surface step-level failure states.",
+      "id": "REQ-34",
+      "requirement": "Implement backend storage and APIs for anonymized public memory signals (set/get opt-in preference, ingest anonymized signals rejecting raw text fields, and query aggregate stats), all within backend/main.mo with auth checks.",
+      "reason": "Although backend/main.mo shows new in-memory maps for pppOptIn and anonymizedSignals, the diff snippet does not include any new public/shared/query methods to set/get opt-in, ingest signals, or query aggregate signals, nor any explicit rejection of raw-text fields in an ingest method.",
       "evidence": [
-        "frontend/src/lib/mamaPipeline.ts",
-        "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx"
+        "backend/main.mo (truncated; shows `pppOptIn` and `anonymizedSignals` maps but no new PPP methods visible)"
       ]
     },
     {
-      "id": "REQ-26",
-      "requirement": "The UI displays the feedback for the latest interaction without storing it as a separate persisted chat message (UI-only annotation).",
-      "reason": "ChatPage sets state for latestFeedback/showFeedback, but the provided truncated diff does not include the JSX that actually renders this feedback to the user, so UI display cannot be confirmed from the excerpt alone.",
+      "id": "REQ-35",
+      "requirement": "Extend mamaPipeline with deterministic anti-repetition to avoid repeating the same template in-session; when triggered include exactly «لرد، بذار یه زاویه جدید باز کنیم»; do not modify FAQ answers beyond existing rules.",
+      "reason": "frontend/src/lib/mamaPipeline.ts is truncated before the response selection logic where anti-repetition and the exact trigger phrase would be implemented, so the required behavior and exact Persian phrase cannot be verified from the provided diff summary.",
       "evidence": [
-        "frontend/src/pages/ChatPage.tsx"
-      ]
-    },
-    {
-      "id": "REQ-25",
-      "requirement": "Once Mama’s response is successfully sent, the indicator transitions to a completed state and can be dismissed/collapsed without affecting message history.",
-      "reason": "HeartbeatPipelineIndicator supports optional dismissal via props, and ChatPage tracks showPipeline state, but the truncated ChatPage diff does not show the completed-state handling and the actual dismiss/collapse wiring (e.g., passing canDismiss/onDismiss and toggling visibility).",
-      "evidence": [
-        "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
-        "frontend/src/pages/ChatPage.tsx"
+        "frontend/src/lib/mamaPipeline.ts (truncated before response selection logic; no visible occurrence of the exact phrase)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Artificial per-step processing delays (e.g., delay(150), delay(200), delay(250)) inside the pipeline runner.",
-      "reason": "The BuildRequest asks for a deterministic 7-step pipeline and progress visualization, but does not request adding simulated delays/yields as part of pipeline execution.",
+      "description": "Enhanced actor readiness/authentication gating and new error handling in send-message mutation (e.g., blocking while connecting/anonymous, additional logging).",
+      "reason": "Not part of REQ-33–REQ-37; this is additional behavior beyond the requested privacy-preserving learning + anti-repetition + aggregate-signal variety changes.",
       "evidence": [
-        "frontend/src/lib/mamaPipeline.ts"
+        "frontend/src/hooks/useQueries.ts (modified): `useSendMessage` adds readiness.status checks for 'connecting'/'anonymous' and new error handling"
+      ]
+    },
+    {
+      "description": "Added UI card styling and loading spinner behavior for the opt-in toggle component (lucide Loader2, Card layout).",
+      "reason": "REQ-36 requires a simple Persian toggle and persistence; the specific card-based presentation and spinner are extra UI enhancements not explicitly requested.",
+      "evidence": [
+        "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx (added)"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
-    "frontend/src/lib/mamaBrain.ts",
+    "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/lib/mamaPipeline.ts",
     "frontend/src/pages/ChatPage.tsx",
-    "frontend/src/utils/chatErrors.ts",
+    "frontend/src/utils/privacyPreservingSignals.ts",
     "project_state.json"
   ]
 }

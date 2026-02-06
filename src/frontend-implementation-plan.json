@@ -1,84 +1,108 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Per-message deterministic 7-step Mama pipeline with heartbeat progress UI and feedback annotation",
+  "title": "Privacy-preserving learning opt-in + deterministic anti-repetition + aggregate-signal-informed public responses (frontend-only)",
   "requirements": [
     {
-      "id": "REQ-24",
-      "summary": "Implement a deterministic per-message 7-step “heartbeat” processing pipeline that runs after the user message is stored and before Mama’s reply is stored (works in both private/public modes).",
+      "id": "REQ-33",
+      "summary": "Add an opt-in privacy-preserving learning flow in the UI that only contributes anonymized, non-reversible aggregate signals (no raw private text) and never exposes per-user private-derived content.",
       "acceptanceCriteria": [
-        "Sending a message in ChatPage triggers a deterministic pipeline run that is explicitly modeled as 7 steps (a fixed-length sequence) per message.",
-        "The pipeline does not introduce any non-deterministic behavior or external LLM calls; it must compose only existing deterministic operations (e.g., keyboard correction, FAQ lookup, empathetic fallback selection, etc.).",
-        "The pipeline executes for both private and public chat modes without breaking the existing send flow (user message stored first, then Mama response stored)."
+        "A user can explicitly enable/disable contributing private-chat signals (opt-in default is OFF).",
+        "When enabled, sending a private message results in only anonymized/aggregate data being persisted; no private raw message text is written to any new public-memory structure.",
+        "There is no backend query that returns any per-user private-message-derived content or allows reconstruction of private messages.",
+        "Disabling the opt-in stops future contributions; existing aggregate signals remain aggregate and non-attributable to the user."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/mamaPipeline.ts",
+          "path": "frontend/src/utils/privacyPreservingSignals.ts",
           "operation": "create",
-          "description": "Create a deterministic 7-step “Mama brain refinement” pipeline module that orchestrates step execution, emits step state transitions, and returns the final Mama reply text plus UI-safe run metadata (no persisted fields)."
+          "description": "Create deterministic client-side derivation for privacy-preserving learning signals from a normalized private message (e.g., coarse category buckets + numeric score), explicitly returning ONLY numeric/aggregate fields (no raw text), suitable for calling storeAnonymizedSignal."
         },
         {
-          "path": "frontend/src/lib/mamaBrain.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Refactor/extend the Mama response generation logic to support being invoked as part of the 7-step pipeline (deterministic path selection: FAQ match vs empathetic fallback) while keeping behavior consistent with current replies."
+          "description": "Add React Query hooks/mutations for privacy-preserving learning preference and signal ingestion (getPppOptIn, setPppOptIn, storeAnonymizedSignal), ensuring mutation payloads do not include any raw message content."
         },
         {
           "path": "frontend/src/pages/ChatPage.tsx",
           "operation": "modify",
-          "description": "Update the send flow to: (1) send/store the user message first (unchanged behavior), then (2) run the deterministic 7-step pipeline to generate Mama’s reply, then (3) send/store Mama’s reply; ensure it works identically for private/public modes and preserves existing toast/error behavior."
+          "description": "Integrate the opt-in state into the Private Chat experience: load preference on entry, default OFF when unknown, and when enabled trigger anonymized signal ingestion derived from corrected+normalized text (without sending raw text) after the user message is sent."
         }
       ]
     },
     {
-      "id": "REQ-25",
-      "summary": "Add a ChatPage “heartbeat” progress UI that shows a 7-step pipeline timeline/stepper for the latest message, including active pulse, completed, and failed states, and supports collapsing after completion.",
+      "id": "REQ-35",
+      "summary": "Add deterministic anti-repetition to the Mama pipeline to avoid repeating the same template consecutively in a chat session, and include the required Persian “new angle” trigger phrase when it triggers.",
       "acceptanceCriteria": [
-        "After the user sends a message, the chat UI shows a clearly visible processing indicator while Mama’s response is being generated and sent.",
-        "The indicator displays exactly 7 steps and updates step state as the pipeline progresses (pending → active → completed, and failed if an error occurs).",
-        "If an error happens during any step, the UI surfaces the failure state and the existing error toast behavior remains intact (no regression).",
-        "Once Mama’s response is successfully sent, the indicator transitions to a completed state and can be dismissed/collapsed without affecting message history."
+        "If the pipeline would select the same empathetic (or civic-empowerment) template as the most recent Mama message in the current chat UI session, it deterministically selects a different template instead.",
+        "When the anti-repetition strategy triggers, the returned response content includes the Persian phrase exactly: «لرد، بذار یه زاویه جدید باز کنیم».",
+        "The anti-repetition logic remains deterministic (same inputs + same recent-history state yields the same output).",
+        "FAQ-sourced answers are not modified beyond existing normalization/prefix rules (anti-repetition does not rewrite factual FAQ answers)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
-          "operation": "create",
-          "description": "Implement a compact 7-step timeline/stepper component that renders pending/active/completed/failed states with a heartbeat/pulse affordance for the active step (use existing styling utilities and Shadcn components without editing frontend/src/components/ui). Verify the component's usage instructions before implementing."
+          "path": "frontend/src/lib/mamaPipeline.ts",
+          "operation": "modify",
+          "description": "Extend runMamaPipeline to accept a small deterministic session-history input (e.g., last template key/index for empathetic/civic responses) and implement anti-repetition: if the newly selected template matches the most recent Mama template in-session, deterministically select an alternate template and append the exact trigger phrase «لرد، بذار یه زاویه جدید باز کنیم» to the response content (apply only for empathetic/civic, not for FAQ)."
         },
         {
           "path": "frontend/src/pages/ChatPage.tsx",
           "operation": "modify",
-          "description": "Wire the HeartbeatPipelineIndicator into ChatPage so it appears for the latest interaction during pipeline execution, updates step-by-step from pipeline callbacks, shows failure state on errors, and allows collapse/dismiss after completion without altering message history. Verify the component's usage instructions before implementing."
+          "description": "Track the most recent Mama template selection in the current UI session (per chat mode) and pass it into runMamaPipeline; after sending Mama’s response, update the stored last-template key so the next pipeline call can deterministically avoid repetition."
         }
       ]
     },
     {
-      "id": "REQ-26",
-      "summary": "Return deterministic structured feedback from the same pipeline run and display it as a lightweight UI-only annotation for the latest interaction (not persisted as a chat message).",
+      "id": "REQ-36",
+      "summary": "Wire the opt-in learning control into the Private Chat UI and ensure enabled private sends ingest only anonymized signals after correction/normalization (and never for Public Chat).",
       "acceptanceCriteria": [
-        "Mama response generation returns (in code) both: (1) the final response text to be sent as a message, and (2) a structured feedback object/string produced deterministically from the pipeline run.",
-        "The UI displays the feedback for the latest interaction without storing it as a separate persisted chat message (i.e., it is a UI-only annotation).",
-        "Feedback rendering does not leak sensitive data (e.g., it must not include full user message content in debug-style logs beyond what the app already logs safely)."
+        "Private Chat UI includes a clearly labeled toggle/control for enabling/disabling privacy-preserving learning (user-facing text in the UI for this control is in Persian as per the app’s existing localization; this build request remains in English).",
+        "The toggle state is persisted per-user via backend preference APIs and restored on reload/login.",
+        "When enabled, sending a private message results in a follow-up call that ingests anonymized signals only; the payload must not include the raw message content field.",
+        "Public Chat sending does not ingest signals from other users’ public messages via this opt-in mechanism (signals are derived only from the opting-in user’s private messages)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/mamaBrain.ts",
-          "operation": "modify",
-          "description": "Extend exported response types/functions to include a deterministic feedback payload (e.g., selected path, refinement flags, and non-sensitive notes) alongside the response content, ensuring feedback does not include full user message content."
-        },
-        {
-          "path": "frontend/src/lib/mamaPipeline.ts",
-          "operation": "modify",
-          "description": "Augment the 7-step pipeline to produce and return a UI-safe structured feedback object derived solely from the pipeline execution (e.g., step outcomes and chosen response source), without persisting it or logging sensitive content."
+          "path": "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
+          "operation": "create",
+          "description": "Create a small Private Chat-only UI control (Persian label + short explanation) to enable/disable privacy-preserving learning; implement with existing shadcn-ui primitives (e.g., Switch/Label/Card if present). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/ChatPage.tsx",
           "operation": "modify",
-          "description": "Display the latest pipeline feedback in ChatPage as a lightweight UI-only annotation (e.g., small collapsible panel near the heartbeat indicator) and ensure it is not sent via sendMessage / not stored as a chat message; keep existing sanitized logging behavior intact."
+          "description": "Render the privacy-preserving learning toggle only when mode==='private'; bind it to getPppOptIn/setPppOptIn hooks and show appropriate loading/disabled states. Ensure signal ingestion is executed only for private messages and only when the opt-in is enabled."
         },
         {
-          "path": "frontend/src/utils/chatErrors.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Ensure error/debug utilities continue to avoid leaking sensitive content when pipeline/step errors are logged (e.g., keep logs length-only or summary-only), while preserving existing toast/error behavior."
+          "description": "Add/extend hooks to persist and restore the opt-in toggle state per user via backend methods (getPppOptIn/setPppOptIn), and a mutation for storeAnonymizedSignal; ensure errors are handled without blocking chat sends."
+        }
+      ]
+    },
+    {
+      "id": "REQ-37",
+      "summary": "Use aggregate public-memory signals as a deterministic input to Public Chat response selection to improve variety/grounding, without revealing private origins and with graceful fallback on failure.",
+      "acceptanceCriteria": [
+        "Public Chat pipeline can query aggregate public memory signals and deterministically use them to influence response selection (e.g., selecting among templates/categories) without adding any private content to the response.",
+        "Mama responses in Public Chat never mention or imply that they were informed by private chat (no phrases like “from your private chat…” or similar).",
+        "No UI panel displays the public-memory signals in a way that could reveal private content; usage is internal to response selection only.",
+        "If the memory-signal query fails, the pipeline falls back to existing behavior without breaking message sending."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a query hook to fetch aggregate, non-sensitive public memory signals for internal use (e.g., useGetAllCategoryStats using the existing backendInterface). Do not surface these values directly in the UI."
+        },
+        {
+          "path": "frontend/src/lib/mamaPipeline.ts",
+          "operation": "modify",
+          "description": "Add an optional deterministic aggregate-signal input (e.g., a numeric seed derived from aggregate stats) that can influence template selection in Public Chat only; ensure the response text never references any private-chat origin and preserve existing FAQ answer behavior."
+        },
+        {
+          "path": "frontend/src/pages/ChatPage.tsx",
+          "operation": "modify",
+          "description": "In Public Chat mode, fetch aggregate signals and pass a derived deterministic seed into runMamaPipeline; on query failure/timeouts, proceed with current pipeline behavior (no send breakage) and do not display any signal details in the UI."
         }
       ]
     }

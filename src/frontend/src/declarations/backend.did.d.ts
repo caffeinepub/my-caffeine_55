@@ -11,6 +11,11 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface FaqEntry { 'question' : string, 'answer' : string }
+export interface MamaFeedbackMetadata {
+  'explanation' : string,
+  'userPrompt' : string,
+  'category' : string,
+}
 export interface Message {
   'content' : string,
   'author' : Principal,
@@ -26,18 +31,36 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addFaqEntry' : ActorMethod<[string, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'clearFeedbackMetadata' : ActorMethod<[], undefined>,
   'findFaqMatch' : ActorMethod<[string], [] | [FaqEntry]>,
+  'getAllCategoryStats' : ActorMethod<[], Array<[string, number, bigint]>>,
+  'getAllCategoryTotalsByUser' : ActorMethod<[], Array<[string, number]>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getCategoryStats' : ActorMethod<
+    [string],
+    [] | [
+      {
+        'count' : bigint,
+        'recentTimestamps' : Array<Time>,
+        'averageScore' : number,
+      }
+    ]
+  >,
   'getChatStats' : ActorMethod<[], [bigint, bigint, bigint]>,
+  'getFeedbackMetadata' : ActorMethod<[], [] | [MamaFeedbackMetadata]>,
   'getNewPublicMessages' : ActorMethod<[], Array<Message>>,
+  'getPppOptIn' : ActorMethod<[], boolean>,
   'getPrivateMessages' : ActorMethod<[], Array<Message>>,
   'getPublicMessages' : ActorMethod<[], Array<Message>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveFeedbackMetadata' : ActorMethod<[MamaFeedbackMetadata], undefined>,
   'searchFaqsByKeyword' : ActorMethod<[string], Array<FaqEntry>>,
   'sendMessage' : ActorMethod<[string, boolean], undefined>,
+  'setPppOptIn' : ActorMethod<[boolean], undefined>,
+  'storeAnonymizedSignal' : ActorMethod<[string, number], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -1,11 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Add a deterministic per-message “heartbeat” processing pipeline in chat that runs a fixed 7-step refinement sequence before generating Mama’s reply, with a visible 7-step progress indicator and lightweight UI-only feedback.
+**Goal:** Add an opt-in, privacy-preserving learning mechanism that contributes only anonymized aggregate signals (no private text leakage) and reduce repetitive Mama replies via deterministic anti-repetition behavior.
 
 **Planned changes:**
-- Implement a deterministic 7-step per-message pipeline that runs after the user message is stored and before Mama’s response is stored, working in both private and public chat modes.
-- Add a “heartbeat” processing UI on ChatPage that shows an active pulse and a 7-step timeline/stepper (pending → active → completed, with failed state on error) for the latest message, and allow collapsing/dismissing after completion.
-- Extend Mama response generation to output both the final response text and a deterministic structured feedback payload from the same pipeline run, and render that feedback in the UI as a non-persisted annotation for the latest interaction.
+- Add backend support (single Motoko actor) for per-user opt-in preference (set/get), authenticated ingestion of anonymized signal records (reject any raw text fields), and querying of high-level aggregate public-memory signals (no principals or text returned).
+- Add a Private Chat UI control (Persian-labeled) to enable/disable privacy-preserving learning; persist and restore the toggle state via backend APIs.
+- When opt-in is enabled, derive and send anonymized/aggregate signal payloads from private messages after existing keyboard correction/normalization, ensuring no raw private message text is included in the payload.
+- Extend the Mama pipeline with a deterministic anti-repetition strategy within the current chat UI session; when repetition triggers, switch to a different deterministic template and include the exact Persian phrase «لرد، بذار یه زاویه جدید باز کنیم» in the response content.
+- Use aggregate public-memory signals as an additional deterministic input in Public Chat response selection to improve variety/grounding without referencing private chat origins; fall back to existing behavior if signal queries fail.
 
-**User-visible outcome:** When a user sends a message, they see a heartbeat-style 7-step processing indicator while Mama prepares a reply; after completion they receive Mama’s response plus a small feedback annotation explaining what was refined, without altering chat history storage.
+**User-visible outcome:** Users can opt in (or keep off) a privacy-preserving learning setting in Private Chat; when enabled, their private messages contribute only anonymized aggregate signals. Mama repeats itself less in a session (and uses the specified Persian “new angle” phrase when it would repeat), and Public Chat responses can be influenced by aggregate signals without revealing any private information.

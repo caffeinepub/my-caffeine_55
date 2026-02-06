@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 15,
+  "projectStateVersion": 21,
   "summary": "Build a Persian-language AI chatbot named «ماما» with a core/central brain concept, supporting private and public chat, storing Q&A data for analysis, integrating external knowledge sources (e.g., Wikipedia), aiming for decentralized operation with transparent reporting, and additionally supporting a more “alive”/empathetic conversation mode for users to درد و دل. UI theme direction updated to a purple/blue/white/black palette.",
   "architectural_notes": [
     "Core concept: «مغز مرکزی» organized as 7 interwoven rings (flower-of-life) model.",
@@ -10,11 +10,15 @@
     "Planned external knowledge integrations (Google/Wikipedia-like sources).",
     "UI theme palette preference changed to بنفش/آبی/سفید/سیاه (overrides prior ‘no blue/purple’ constraint).",
     "Performance direction request: optimize processing pipeline for higher throughput; user suggests moving from linear processing to vectorized/matrix-based processing where applicable.",
-    "Conceptual dataflow metaphor: treat stored data as «خون» and each new message as «تپش»; each incoming message pushes data toward Mama’s «مغز مرکزی» and triggers refinement/processing across the 7 interwoven rings to produce new answers and feedback."
+    "Conceptual dataflow metaphor: treat stored data as «خون» and each new message as «تپش»; each incoming message pushes data toward Mama’s «مغز مرکزی» and triggers refinement/processing across the 7 interwoven rings to produce new answers and feedback.",
+    "User explicitly requests that «ماما» learn Persian better and be able to speak like a human (more natural Persian conversation quality).",
+    "Do not use or reveal private-chat content in public responses; if leveraging private interactions for learning, only allow privacy-preserving aggregation/anonymized embeddings (no raw text, no principals), ideally behind explicit user consent and with anti-leak safeguards."
   ],
   "known_issues": [
     "Conflict: existing UI theme requirement says not to use blue/purple as primary, but user now explicitly requests a purple/blue/white/black theme.",
-    "Bug/regression: users cannot send messages to «ماما»; sending a message triggers an error (needs investigation and fix)."
+    "Bug/regression: users cannot send messages to «ماما»; sending a message triggers an error (needs investigation and fix).",
+    "Sending a message errors with a “connecting… / login” state; user cannot send messages to Mama (possibly an auth/connection loop).",
+    "User reports repetitive predefined responses: Mama frequently replies with the same default messages (needs response variety / anti-repetition logic and/or better retrieval)."
   ],
   "isFixRequest": false,
   "existing_features": [
@@ -217,6 +221,86 @@
         "REQ-26"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-end-to-end-regression-where-users-cannot-send-messages-to-mama-both-private-and-public-modes-including-cases-where-the-ui-reports-a-connecting-login-state-during-send",
+      "title": "Investigate and fix the end-to-end regression where users cannot send messages to Mama (both Private and Public modes), including cases where the UI reports a connecting/login state during send.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-prevent-sending-while-the-backend-actor-is-not-ready-disable-the-chat-composer-and-send-action-until-the-authenticated-actor-instance-is-initialized-and-show-a-clear-non-blocking-status-in-the-chat-ui-while-connecting",
+      "title": "Prevent sending while the backend actor is not ready: disable the chat composer and send action until the authenticated actor instance is initialized, and show a clear non-blocking status in the chat UI while connecting.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-send-failure-observability-for-this-specific-issue-by-logging-a-sanitized-structured-debug-record-on-send-errors-that-includes-chat-mode-public-private-actor-ready-state-identity-present-absent-and-the-extracted-error-classification-auth-vs-network-vs-actor-not-ready",
+      "title": "Improve send-failure observability for this specific issue by logging a sanitized, structured debug record on send errors that includes: chat mode (public/private), actor ready state, identity present/absent, and the extracted error classification (auth vs network vs actor-not-ready).",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-mama-s-persian-language-response-naturalness-more-human-like-while-keeping-the-system-deterministic-and-not-using-any-external-llms-expand-response-templates-phrasing-variety-reduce-repetitive-wording-and-ensure-consistent-natural-persian-punctuation-spacing-and-the-existing-prefix-format-across-faq-match-empathetic-support-and-fallback-paths",
+      "title": "Improve Mama’s Persian-language response naturalness (more human-like) while keeping the system deterministic and not using any external LLMs: expand response templates/phrasing variety, reduce repetitive wording, and ensure consistent, natural Persian punctuation/spacing and the existing \"[ماما]\" prefix format across FAQ-match, empathetic-support, and fallback paths.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-deterministic-civic-empowerment-freedom-response-path-that-activates-for-persian-keywords-topics-related-to-freedom-civil-rights-community-organizing-and-social-change-and-returns-helpful-non-violent-safety-aware-guidance-in-persian-e-g-learning-resources-constructive-community-steps-dialogue-guidance-without-providing-instructions-for-wrongdoing-or-violence",
+      "title": "Add a deterministic \"civic empowerment / freedom\" response path that activates for Persian keywords/topics related to freedom, civil rights, community organizing, and social change, and returns helpful, non-violent, safety-aware guidance in Persian (e.g., learning resources, constructive community steps, dialogue guidance), without providing instructions for wrongdoing or violence.",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-store-and-surface-structured-metadata-for-the-new-civic-empowerment-path-in-the-existing-mama-feedback-mechanism-so-the-chat-ui-can-explain-briefly-why-mama-responded-that-way-e-g-detected-topic-category-while-keeping-the-explanation-in-persian-and-the-build-request-user-facing-text-in-english",
+      "title": "Store and surface structured metadata for the new civic-empowerment path in the existing Mama feedback mechanism so the chat UI can explain (briefly) why Mama responded that way (e.g., detected topic category), while keeping the explanation in Persian and the build-request user-facing text in English.",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-opt-in-privacy-preserving-learning-capability-that-allows-a-user-s-private-chat-messages-to-contribute-only-anonymized-non-reversible-aggregate-signals-to-a-global-public-memory-store-without-storing-or-exposing-any-private-raw-text-and-without-allowing-other-users-to-retrieve-any-user-specific-private-information",
+      "title": "Add an opt-in “privacy-preserving learning” capability that allows a user’s private-chat messages to contribute only anonymized, non-reversible aggregate signals to a global public memory store, without storing or exposing any private raw text and without allowing other users to retrieve any user-specific private information.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-mama-pipeline-frontend-src-lib-mamapipeline-ts-to-reduce-repetitive-predefined-replies-by-adding-a-deterministic-anti-repetition-strategy-that-avoids-returning-the-same-response-template-repeatedly-in-the-same-chat-session-when-repetition-is-detected-the-pipeline-must-switch-to-a-different-deterministic-template-and-include-the-persian-new-angle-trigger-phrase-in-the-response-content",
+      "title": "Extend the Mama pipeline (frontend/src/lib/mamaPipeline.ts) to reduce repetitive predefined replies by adding a deterministic anti-repetition strategy that avoids returning the same response template repeatedly in the same chat session; when repetition is detected, the pipeline must switch to a different deterministic template and include the Persian “new angle” trigger phrase in the response content.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-wire-the-opt-in-learning-flow-into-the-chat-ui-provide-a-simple-user-control-on-the-private-chat-page-to-enable-disable-contributing-anonymized-learning-signals-and-when-enabled-ensure-private-messages-trigger-anonymized-signal-ingestion-to-the-backend-after-keyboard-correction-normalization-without-sending-any-raw-private-text-as-part-of-the-signal-payload",
+      "title": "Wire the opt-in learning flow into the chat UI: provide a simple user control on the Private Chat page to enable/disable contributing anonymized learning signals, and when enabled, ensure private messages trigger anonymized-signal ingestion to the backend after keyboard correction/normalization (without sending any raw private text as part of the signal payload).",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-use-the-aggregated-public-memory-signals-from-the-backend-as-an-additional-deterministic-input-to-response-selection-in-public-chat-to-improve-variety-grounding-without-leaking-private-information-this-must-not-display-or-reference-any-private-chat-origin-in-the-ui-or-in-mama-s-response-text",
+      "title": "Use the aggregated public memory signals (from the backend) as an additional deterministic input to response selection in Public Chat to improve variety/grounding without leaking private information; this must not display or reference any private-chat origin in the UI or in Mama’s response text.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -298,6 +382,26 @@
       "id": "AR-15",
       "summary": "Implement a per-message “blood/heartbeat” dataflow: treat stored data as «خون» and each new message as «تپش»، routing data to Mama’s central brain so each incoming message triggers processing/refinement across the 7 rings and enables generating new answers and user feedback.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Improve «ماما»’s Persian language proficiency and make responses more human-like/natural conversationally (beyond basic Persian UI + deterministic FAQ replies)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Implement privacy-preserving vector memory learning: ingest private chats into anonymized/consent-based public embedding memory (no raw text, no identifiers) to improve public chat responses while preventing private-data leakage and reducing repetitive template replies (include a 'زاویه جدید' anti-repetition trigger).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Implement backend storage and APIs for the anonymized public memory signals using the existing single-actor Motoko canister (backend/main.mo), including: (1) a method to set/get the caller’s opt-in preference, (2) a method to ingest an anonymized signal record derived from a private message, and (3) a method to query high-level aggregate signals for use in response selection (without returning any raw text).",
+      "reqIds": [
+        "REQ-34"
+      ],
       "status": "pending"
     }
   ],

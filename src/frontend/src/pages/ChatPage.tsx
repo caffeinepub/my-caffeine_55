@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { useGetPrivateMessages, useGetPublicMessages, useSendMessage, useFindFaqMatch } from '../hooks/useQueries';
+import { useGetPrivateMessages, useGetPublicMessages, useSendMessage, useFindFaqMatch, useSaveFeedbackMetadata, useGetPppOptIn, useStoreAnonymizedSignal, useGetAllCategoryStats } from '../hooks/useQueries';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatComposer } from '../components/chat/ChatComposer';
 import { ExternalKnowledgePanel } from '../components/external-knowledge/ExternalKnowledgePanel';
 import { HeartbeatPipelineIndicator } from '../components/chat/HeartbeatPipelineIndicator';
+import { PrivacyPreservingLearningToggle } from '../components/chat/PrivacyPreservingLearningToggle';
 import { runMamaPipeline, type PipelineStep, type PipelineFeedback } from '../lib/mamaPipeline';
 import { extractErrorInfo, createDebugLog } from '../utils/chatErrors';
+import { sanitizeUserPrompt, normalizePersianText } from '../utils/persianText';
+import { deriveAnonymizedSignals } from '../utils/privacyPreservingSignals';
+import { correctPersianKeyboard } from '../utils/persianKeyboardCorrection';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useActorReadiness } from '../hooks/useActorReadiness';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -25,13 +30,19 @@ export function ChatPage({ mode }: ChatPageProps) {
   const [showPipeline, setShowPipeline] = useState(false);
   const [latestFeedback, setLatestFeedback] = useState<PipelineFeedback | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [lastTemplateKey, setLastTemplateKey] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { identity, login } = useInternetIdentity();
+  const { readiness, isReady, isConnecting } = useActorReadiness();
   const privateMessages = useGetPrivateMessages();
   const publicMessages = useGetPublicMessages();
   const sendMessage = useSendMessage();
   const findFaqMatch = useFindFaqMatch();
+  const saveFeedbackMetadata = useSaveFeedbackMetadata();
+  const { data: pppOptIn } = useGetPppOptIn();
+  const storeSignal = useStoreAnonymizedSignal();
+  const { data: categoryStats } = useGetAllCategoryStats();
 
   const messages = mode === 'private' ? privateMessages.data : publicMessages.data;
   const isLoading = mode === 'private' ? privateMessages.isLoading : publicMessages.isLoading;
@@ -44,6 +55,8 @@ export function ChatPage({ mode }: ChatPageProps) {
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
+    const isPublic = mode === 'public';
+
     // Check authentication first
     if (!isAuthenticated) {
       toast.error('لطفاً ابتدا وارد شوید', {
@@ -55,7 +68,13 @@ export function ChatPage({ mode }: ChatPageProps) {
       throw new Error('Not authenticated');
     }
 
-    const isPublic = mode === 'public';
+    // Check actor readiness - block send if still connecting
+    if (!isReady || readiness.status === 'connecting') {
+      toast.error('در حال اتصال... لطفاً لحظه‌ای صبر کنید', {
+        description: 'اتصال در حال برقراری است',
+      });
+      throw new Error('Actor not ready');
+    }
 
     // Reset pipeline state
     setShowPipeline(true);
@@ -66,7 +85,14 @@ export function ChatPage({ mode }: ChatPageProps) {
       // Step 1: Send user message first (unchanged behavior)
       await sendMessage.mutateAsync({ content, isPublic });
 
-      // Step 2: Run the 7-step Mama brain pipeline
+      // Step 2: Derive aggregate seed for Public Chat (deterministic variety)
+      let aggregateSeed: number | undefined;
+      if (isPublic && categoryStats && categoryStats.length > 0) {
+        // Use sum of all category scores as seed
+        aggregateSeed = categoryStats.reduce((sum, [_, score]) => sum + score, 0);
+      }
+
+      // Step 3: Run the 7-step Mama brain pipeline with anti-repetition
       const pipelineResult = await runMamaPipeline(
         content,
         async (question) => {
@@ -75,14 +101,66 @@ export function ChatPage({ mode }: ChatPageProps) {
         },
         (steps) => {
           setPipelineSteps(steps);
-        }
+        },
+        lastTemplateKey,
+        aggregateSeed
       );
+
+      // Update last template key for next message
+      if (pipelineResult.selectedTemplateKey) {
+        setLastTemplateKey(pipelineResult.selectedTemplateKey);
+      }
 
       // Store feedback for UI display
       setLatestFeedback(pipelineResult.feedback);
       setShowFeedback(true);
 
-      // Step 3: Send Mama's response
+      // Step 4: Save structured feedback metadata to backend
+      const feedbackCategory = 
+        pipelineResult.feedback.responseSource === 'faq' ? 'دانش' :
+        pipelineResult.feedback.responseSource === 'civic-empowerment' ? 'توانمندسازی مدنی' :
+        'همدلانه';
+      
+      const feedbackExplanation = 
+        pipelineResult.feedback.responseSource === 'faq' ? 'پاسخ از بانک دانش ماما' :
+        pipelineResult.feedback.responseSource === 'civic-empowerment' ? 'راهنمایی مدنی و مسالمت‌آمیز' :
+        `پاسخ همدلانه شماره ${(pipelineResult.feedback.empatheticIndex || 0) + 1}`;
+
+      try {
+        await saveFeedbackMetadata.mutateAsync({
+          category: feedbackCategory,
+          explanation: feedbackExplanation,
+          userPrompt: sanitizeUserPrompt(content),
+        });
+      } catch (error) {
+        // Non-critical: log but don't block the flow
+        console.error('Failed to save feedback metadata:', error instanceof Error ? error.message : 'Unknown error');
+      }
+
+      // Step 5: Privacy-preserving learning (Private Chat only, opt-in)
+      if (!isPublic && pppOptIn) {
+        try {
+          // Correct and normalize the message
+          const correctionResult = correctPersianKeyboard(content);
+          const normalizedMessage = normalizePersianText(correctionResult.corrected);
+          
+          // Derive anonymized signals (NO raw text)
+          const signals = deriveAnonymizedSignals(normalizedMessage);
+          
+          // Store each signal (non-blocking)
+          for (const signal of signals) {
+            storeSignal.mutate({
+              category: signal.category,
+              normalizedScore: signal.normalizedScore,
+            });
+          }
+        } catch (error) {
+          // Non-critical: log but don't block
+          console.error('Failed to store anonymized signals:', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+
+      // Step 6: Send Mama's response
       await sendMessage.mutateAsync({ 
         content: pipelineResult.responseContent, 
         isPublic 
@@ -94,20 +172,34 @@ export function ChatPage({ mode }: ChatPageProps) {
       // Show success toast based on response source
       if (pipelineResult.feedback.responseSource === 'faq') {
         toast.success('پاسخ در مغز ماما یافت شد!');
+      } else if (pipelineResult.feedback.responseSource === 'civic-empowerment') {
+        toast.success('ماما راهنمایی مدنی ارائه داد');
       } else {
         toast.success('ماما با محبت پاسخ داد');
       }
     } catch (error) {
-      createDebugLog('send', error, { isPublic, contentLength: content.length });
+      // Create structured debug log with all required fields
+      createDebugLog('send', error, { 
+        isPublic, 
+        contentLength: content.length,
+        actorReady: isReady,
+        identityPresent: isAuthenticated,
+      });
       
       const errorInfo = extractErrorInfo(error);
       
-      if (errorInfo.isAuthError) {
+      // Only show login CTA for auth-class errors
+      if (errorInfo.classification === 'auth') {
         toast.error(errorInfo.userMessage, {
           action: {
             label: 'ورود',
             onClick: () => login(),
           },
+        });
+      } else if (errorInfo.classification === 'actor-not-ready') {
+        // Non-blocking connecting status - already handled by UI
+        toast.error(errorInfo.userMessage, {
+          description: 'لطفاً منتظر بمانید تا اتصال کامل شود',
         });
       } else {
         toast.error(errorInfo.userMessage);
@@ -123,6 +215,23 @@ export function ChatPage({ mode }: ChatPageProps) {
   };
 
   const allStepsCompleted = pipelineSteps.length > 0 && pipelineSteps.every(s => s.status === 'completed');
+
+  // Determine if send should be disabled
+  const canSend = isAuthenticated && isReady;
+
+  // Get Persian label for response source
+  const getResponseSourceLabel = (source: string) => {
+    switch (source) {
+      case 'faq':
+        return 'بانک دانش';
+      case 'civic-empowerment':
+        return 'توانمندسازی مدنی';
+      case 'empathetic':
+        return 'پاسخ همدلانه';
+      default:
+        return 'نامشخص';
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -146,6 +255,11 @@ export function ChatPage({ mode }: ChatPageProps) {
               </Button>
             )}
           </div>
+
+          {/* Privacy-preserving learning toggle (Private Chat only) */}
+          {mode === 'private' && isAuthenticated && (
+            <PrivacyPreservingLearningToggle />
+          )}
 
           <Tabs value={showExternalKnowledge ? 'knowledge' : 'chat'} onValueChange={(v) => setShowExternalKnowledge(v === 'knowledge')}>
             <TabsList className="grid w-full grid-cols-2">
@@ -177,7 +291,7 @@ export function ChatPage({ mode }: ChatPageProps) {
                       <div className="text-xs space-y-1">
                         <p className="text-muted-foreground">
                           <span className="font-semibold">منبع پاسخ:</span>{' '}
-                          {latestFeedback.responseSource === 'faq' ? 'بانک دانش' : 'پاسخ همدلانه'}
+                          {getResponseSourceLabel(latestFeedback.responseSource)}
                         </p>
                         {latestFeedback.correctionApplied && (
                           <p className="text-muted-foreground">
@@ -221,7 +335,9 @@ export function ChatPage({ mode }: ChatPageProps) {
 
               <ChatComposer 
                 onSend={handleSendMessage} 
-                disabled={!isAuthenticated}
+                disabled={!canSend}
+                isConnecting={isAuthenticated && isConnecting}
+                connectingMessage="در حال اتصال..."
               />
             </TabsContent>
 

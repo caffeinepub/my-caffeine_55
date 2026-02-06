@@ -2,54 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-a-per-message-processing-pipeline-that-treats-stored-chat-data-as-blood-and-each-new-user-message-as-a-heartbeat-where-every-sent-message-triggers-a-deterministic-7-step-mama-brain-refinement-sequence-before-producing-mama-s-reply",
-      "featureTitle": "Implement a per-message processing pipeline that treats stored chat data as “blood” and each new user message as a “heartbeat”, where every sent message triggers a deterministic 7-step “Mama brain refinement” sequence before producing Mama’s reply.",
+      "featureId": "feature-add-an-opt-in-privacy-preserving-learning-capability-that-allows-a-user-s-private-chat-messages-to-contribute-only-anonymized-non-reversible-aggregate-signals-to-a-global-public-memory-store-without-storing-or-exposing-any-private-raw-text-and-without-allowing-other-users-to-retrieve-any-user-specific-private-information",
+      "featureTitle": "Add an opt-in “privacy-preserving learning” capability that allows a user’s private-chat messages to contribute only anonymized, non-reversible aggregate signals to a global public memory store, without storing or exposing any private raw text and without allowing other users to retrieve any user-specific private information.",
       "files": [
-        "frontend/src/lib/mamaBrain.ts",
-        "frontend/src/lib/mamaPipeline.ts",
-        "frontend/src/pages/ChatPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-24"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-heartbeat-ui-affordance-to-chatpage-that-visibly-indicates-processing-for-the-latest-message-and-shows-progress-through-the-7-processing-steps-e-g-a-compact-timeline-stepper-with-an-active-pulse-while-the-step-is-running",
-      "featureTitle": "Add a “heartbeat” UI affordance to ChatPage that visibly indicates processing for the latest message and shows progress through the 7 processing steps (e.g., a compact timeline/stepper with an active pulse while the step is running).",
-      "files": [
-        "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
-        "frontend/src/pages/ChatPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-25"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-extend-the-mama-response-generator-to-return-structured-feedback-alongside-the-generated-response-derived-deterministically-from-the-same-pipeline-execution-e-g-which-path-was-used-and-what-was-refined-and-surface-this-feedback-to-the-user-in-the-chat-ui-in-a-lightweight-way",
-      "featureTitle": "Extend the Mama response generator to return structured “feedback” alongside the generated response, derived deterministically from the same pipeline execution (e.g., which path was used and what was refined), and surface this feedback to the user in the chat UI in a lightweight way.",
-      "files": [
-        "frontend/src/lib/mamaBrain.ts",
-        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/ChatPage.tsx",
-        "frontend/src/utils/chatErrors.ts"
+        "frontend/src/utils/privacyPreservingSignals.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -60,7 +18,69 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-26"
+        "REQ-33"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-extend-the-mama-pipeline-frontend-src-lib-mamapipeline-ts-to-reduce-repetitive-predefined-replies-by-adding-a-deterministic-anti-repetition-strategy-that-avoids-returning-the-same-response-template-repeatedly-in-the-same-chat-session-when-repetition-is-detected-the-pipeline-must-switch-to-a-different-deterministic-template-and-include-the-persian-new-angle-trigger-phrase-in-the-response-content",
+      "featureTitle": "Extend the Mama pipeline (frontend/src/lib/mamaPipeline.ts) to reduce repetitive predefined replies by adding a deterministic anti-repetition strategy that avoids returning the same response template repeatedly in the same chat session; when repetition is detected, the pipeline must switch to a different deterministic template and include the Persian “new angle” trigger phrase in the response content.",
+      "files": [
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/pages/ChatPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-35"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-wire-the-opt-in-learning-flow-into-the-chat-ui-provide-a-simple-user-control-on-the-private-chat-page-to-enable-disable-contributing-anonymized-learning-signals-and-when-enabled-ensure-private-messages-trigger-anonymized-signal-ingestion-to-the-backend-after-keyboard-correction-normalization-without-sending-any-raw-private-text-as-part-of-the-signal-payload",
+      "featureTitle": "Wire the opt-in learning flow into the chat UI: provide a simple user control on the Private Chat page to enable/disable contributing anonymized learning signals, and when enabled, ensure private messages trigger anonymized-signal ingestion to the backend after keyboard correction/normalization (without sending any raw private text as part of the signal payload).",
+      "files": [
+        "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/ChatPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-36"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-use-the-aggregated-public-memory-signals-from-the-backend-as-an-additional-deterministic-input-to-response-selection-in-public-chat-to-improve-variety-grounding-without-leaking-private-information-this-must-not-display-or-reference-any-private-chat-origin-in-the-ui-or-in-mama-s-response-text",
+      "featureTitle": "Use the aggregated public memory signals (from the backend) as an additional deterministic input to response selection in Public Chat to improve variety/grounding without leaking private information; this must not display or reference any private-chat origin in the UI or in Mama’s response text.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/pages/ChatPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-37"
       ],
       "confidence": "high"
     }

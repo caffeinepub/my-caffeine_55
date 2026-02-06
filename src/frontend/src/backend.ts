@@ -100,6 +100,11 @@ export interface FaqEntry {
     answer: string;
 }
 export type Time = bigint;
+export interface MamaFeedbackMetadata {
+    explanation: string;
+    userPrompt: string;
+    category: string;
+}
 export interface UserProfile {
     name: string;
 }
@@ -112,20 +117,33 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addFaqEntry(question: string, answer: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    clearFeedbackMetadata(): Promise<void>;
     findFaqMatch(question: string): Promise<FaqEntry | null>;
+    getAllCategoryStats(): Promise<Array<[string, number, bigint]>>;
+    getAllCategoryTotalsByUser(): Promise<Array<[string, number]>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getCategoryStats(category: string): Promise<{
+        count: bigint;
+        recentTimestamps: Array<Time>;
+        averageScore: number;
+    } | null>;
     getChatStats(): Promise<[bigint, bigint, bigint]>;
+    getFeedbackMetadata(): Promise<MamaFeedbackMetadata | null>;
     getNewPublicMessages(): Promise<Array<Message>>;
+    getPppOptIn(): Promise<boolean>;
     getPrivateMessages(): Promise<Array<Message>>;
     getPublicMessages(): Promise<Array<Message>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveFeedbackMetadata(metadata: MamaFeedbackMetadata): Promise<void>;
     searchFaqsByKeyword(keyword: string): Promise<Array<FaqEntry>>;
     sendMessage(content: string, isPublic: boolean): Promise<void>;
+    setPppOptIn(optIn: boolean): Promise<void>;
+    storeAnonymizedSignal(category: string, normalizedScore: number): Promise<void>;
 }
-import type { FaqEntry as _FaqEntry, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { FaqEntry as _FaqEntry, MamaFeedbackMetadata as _MamaFeedbackMetadata, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -170,6 +188,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async clearFeedbackMetadata(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.clearFeedbackMetadata();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.clearFeedbackMetadata();
+            return result;
+        }
+    }
     async findFaqMatch(arg0: string): Promise<FaqEntry | null> {
         if (this.processError) {
             try {
@@ -182,6 +214,34 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.findFaqMatch(arg0);
             return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllCategoryStats(): Promise<Array<[string, number, bigint]>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllCategoryStats();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllCategoryStats();
+            return result;
+        }
+    }
+    async getAllCategoryTotalsByUser(): Promise<Array<[string, number]>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllCategoryTotalsByUser();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllCategoryTotalsByUser();
+            return result;
         }
     }
     async getCallerUserProfile(): Promise<UserProfile | null> {
@@ -212,6 +272,24 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n5(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getCategoryStats(arg0: string): Promise<{
+        count: bigint;
+        recentTimestamps: Array<Time>;
+        averageScore: number;
+    } | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCategoryStats(arg0);
+                return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCategoryStats(arg0);
+            return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getChatStats(): Promise<[bigint, bigint, bigint]> {
         if (this.processError) {
             try {
@@ -234,6 +312,20 @@ export class Backend implements backendInterface {
             ];
         }
     }
+    async getFeedbackMetadata(): Promise<MamaFeedbackMetadata | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFeedbackMetadata();
+                return from_candid_opt_n8(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFeedbackMetadata();
+            return from_candid_opt_n8(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getNewPublicMessages(): Promise<Array<Message>> {
         if (this.processError) {
             try {
@@ -245,6 +337,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getNewPublicMessages();
+            return result;
+        }
+    }
+    async getPppOptIn(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPppOptIn();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPppOptIn();
             return result;
         }
     }
@@ -318,6 +424,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async saveFeedbackMetadata(arg0: MamaFeedbackMetadata): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveFeedbackMetadata(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveFeedbackMetadata(arg0);
+            return result;
+        }
+    }
     async searchFaqsByKeyword(arg0: string): Promise<Array<FaqEntry>> {
         if (this.processError) {
             try {
@@ -346,6 +466,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async setPppOptIn(arg0: boolean): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setPppOptIn(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setPppOptIn(arg0);
+            return result;
+        }
+    }
+    async storeAnonymizedSignal(arg0: string, arg1: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.storeAnonymizedSignal(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.storeAnonymizedSignal(arg0, arg1);
+            return result;
+        }
+    }
 }
 function from_candid_UserRole_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n6(_uploadFile, _downloadFile, value);
@@ -354,6 +502,20 @@ function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [{
+        count: bigint;
+        recentTimestamps: Array<_Time>;
+        averageScore: number;
+    }]): {
+    count: bigint;
+    recentTimestamps: Array<Time>;
+    averageScore: number;
+} | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MamaFeedbackMetadata]): MamaFeedbackMetadata | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_variant_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {

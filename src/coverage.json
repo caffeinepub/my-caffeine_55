@@ -1,72 +1,97 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T06:05:00.921Z",
+  "generatedAt": "2026-02-06T07:02:52.758Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-24",
-        "summary": "Implement a per-message processing pipeline that treats stored chat data as “blood” and each new user message as a “heartbeat”, where every sent message triggers a deterministic 7-step “Mama brain refinement” sequence before producing Mama’s reply.",
+        "id": "REQ-33",
+        "summary": "Add an opt-in “privacy-preserving learning” capability that allows a user’s private-chat messages to contribute only anonymized, non-reversible aggregate signals to a global public memory store, without storing or exposing any private raw text and without allowing other users to retrieve any user-specific private information.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/mamaPipeline.ts",
-          "frontend/src/lib/mamaBrain.ts",
+          "frontend/src/utils/privacyPreservingSignals.ts",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/pages/ChatPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/mamaPipeline.ts",
-          "frontend/src/lib/mamaBrain.ts",
+          "frontend/src/utils/privacyPreservingSignals.ts",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/pages/ChatPage.tsx"
         ]
       },
       {
-        "id": "REQ-25",
-        "summary": "Add a “heartbeat” UI affordance to ChatPage that visibly indicates processing for the latest message and shows progress through the 7 processing steps (e.g., a compact timeline/stepper with an active pulse while the step is running).",
+        "id": "REQ-34",
+        "summary": "Implement backend storage and APIs for the anonymized public memory signals using the existing single-actor Motoko canister (backend/main.mo), including: (1) a method to set/get the caller’s opt-in preference, (2) a method to ingest an anonymized signal record derived from a private message, and (3) a method to query high-level aggregate signals for use in response selection (without returning any raw text).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-35",
+        "summary": "Extend the Mama pipeline (frontend/src/lib/mamaPipeline.ts) to reduce repetitive predefined replies by adding a deterministic anti-repetition strategy that avoids returning the same response template repeatedly in the same chat session; when repetition is detected, the pipeline must switch to a different deterministic template and include the Persian “new angle” trigger phrase in the response content.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+          "frontend/src/lib/mamaPipeline.ts",
           "frontend/src/pages/ChatPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+          "frontend/src/lib/mamaPipeline.ts",
           "frontend/src/pages/ChatPage.tsx"
         ]
       },
       {
-        "id": "REQ-26",
-        "summary": "Extend the Mama response generator to return structured “feedback” alongside the generated response, derived deterministically from the same pipeline execution (e.g., which path was used and what was refined), and surface this feedback to the user in the chat UI in a lightweight way.",
+        "id": "REQ-36",
+        "summary": "Wire the opt-in learning flow into the chat UI: provide a simple user control on the Private Chat page to enable/disable contributing anonymized learning signals, and when enabled, ensure private messages trigger anonymized-signal ingestion to the backend after keyboard correction/normalization (without sending any raw private text as part of the signal payload).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/mamaBrain.ts",
-          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
           "frontend/src/pages/ChatPage.tsx",
-          "frontend/src/utils/chatErrors.ts"
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/lib/mamaBrain.ts",
-          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
           "frontend/src/pages/ChatPage.tsx",
-          "frontend/src/utils/chatErrors.ts"
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-37",
+        "summary": "Use the aggregated public memory signals (from the backend) as an additional deterministic input to response selection in Public Chat to improve variety/grounding without leaking private information; this must not display or reference any private-chat origin in the UI or in Mama’s response text.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/pages/ChatPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/pages/ChatPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
-    "frontend/src/lib/mamaBrain.ts",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/lib/mamaPipeline.ts",
     "frontend/src/pages/ChatPage.tsx",
-    "frontend/src/utils/chatErrors.ts",
+    "frontend/src/utils/privacyPreservingSignals.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

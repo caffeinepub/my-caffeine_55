@@ -1,75 +1,93 @@
 /**
  * Chat error handling utilities
- * Provides safe error extraction and user-friendly messages
+ * Provides structured error classification and sanitized logging
  */
+
+export type ErrorClassification = 'auth' | 'actor-not-ready' | 'network' | 'unknown';
 
 export interface ErrorInfo {
+  classification: ErrorClassification;
   userMessage: string;
-  isAuthError: boolean;
-  debugInfo: string;
+  debugMessage: string;
 }
 
 /**
- * Extract user-readable error message from unknown error
+ * Extract structured error information from an error object
+ * Classifies errors and provides user-friendly Persian messages
  */
 export function extractErrorInfo(error: unknown): ErrorInfo {
-  let userMessage = 'خطای ناشناخته رخ داد';
-  let isAuthError = false;
-  let debugInfo = 'Unknown error';
-  
-  if (error instanceof Error) {
-    debugInfo = error.message;
-    
-    // Check for authorization/authentication errors
-    const lowerMessage = error.message.toLowerCase();
-    if (
-      lowerMessage.includes('unauthorized') ||
-      lowerMessage.includes('only authenticated users') ||
-      lowerMessage.includes('only users can') ||
-      lowerMessage.includes('permission')
-    ) {
-      isAuthError = true;
-      userMessage = 'لطفاً ابتدا وارد شوید';
-    } else if (lowerMessage.includes('actor not available')) {
-      isAuthError = true;
-      userMessage = 'در حال اتصال... لطفاً دوباره تلاش کنید';
-    } else if (lowerMessage.includes('network') || lowerMessage.includes('fetch')) {
-      userMessage = 'خطای شبکه. لطفاً اتصال اینترنت خود را بررسی کنید';
-    } else {
-      userMessage = 'ارسال پیام ناموفق بود';
-    }
-  } else if (typeof error === 'string') {
-    debugInfo = error;
-    if (error.toLowerCase().includes('unauthorized')) {
-      isAuthError = true;
-      userMessage = 'لطفاً ابتدا وارد شوید';
-    }
-  } else if (error && typeof error === 'object') {
-    debugInfo = JSON.stringify(error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const lowerMessage = errorMessage.toLowerCase();
+
+  // Auth-related errors
+  if (
+    lowerMessage.includes('unauthorized') ||
+    lowerMessage.includes('authentication required') ||
+    lowerMessage.includes('not authenticated') ||
+    lowerMessage.includes('login')
+  ) {
+    return {
+      classification: 'auth',
+      userMessage: 'لطفاً ابتدا وارد شوید',
+      debugMessage: errorMessage,
+    };
   }
-  
-  return { userMessage, isAuthError, debugInfo };
+
+  // Actor not ready errors
+  if (
+    lowerMessage.includes('actor not available') ||
+    lowerMessage.includes('actor not ready') ||
+    lowerMessage.includes('actor still initializing') ||
+    lowerMessage.includes('connecting')
+  ) {
+    return {
+      classification: 'actor-not-ready',
+      userMessage: 'در حال اتصال... لطفاً لحظه‌ای صبر کنید',
+      debugMessage: errorMessage,
+    };
+  }
+
+  // Network-related errors
+  if (
+    lowerMessage.includes('network') ||
+    lowerMessage.includes('fetch') ||
+    lowerMessage.includes('timeout') ||
+    lowerMessage.includes('connection')
+  ) {
+    return {
+      classification: 'network',
+      userMessage: 'خطای شبکه. لطفاً دوباره تلاش کنید',
+      debugMessage: errorMessage,
+    };
+  }
+
+  // Unknown errors
+  return {
+    classification: 'unknown',
+    userMessage: 'خطایی رخ داد. لطفاً دوباره تلاش کنید',
+    debugMessage: errorMessage,
+  };
 }
 
 /**
- * Create sanitized debug log (avoid logging full message content)
- * Ensures no sensitive user data is exposed in logs
+ * Create a sanitized debug log entry
+ * Excludes sensitive user data from logs
  */
-export function createDebugLog(operation: string, error: unknown, metadata?: Record<string, any>): void {
+export function createDebugLog(
+  operation: string,
+  error: unknown,
+  context: Record<string, unknown>
+): void {
   const errorInfo = extractErrorInfo(error);
   
-  const sanitizedMetadata = metadata ? {
-    ...metadata,
-    // Remove sensitive content - only log length
-    content: metadata.content ? `[${metadata.content.length} chars]` : undefined,
-    // Remove any other potentially sensitive fields
-    userMessage: undefined,
-    query: metadata.query ? `[${metadata.query.length} chars]` : undefined,
-  } : {};
+  // Sanitize context: remove any content fields
+  const sanitizedContext = { ...context };
+  delete sanitizedContext.content;
+  delete sanitizedContext.message;
+  delete sanitizedContext.query;
   
-  console.error(`[Chat ${operation}]`, {
-    error: errorInfo.debugInfo,
-    isAuthError: errorInfo.isAuthError,
-    ...sanitizedMetadata,
+  console.error(`[${operation}] ${errorInfo.classification}:`, {
+    debugMessage: errorInfo.debugMessage,
+    context: sanitizedContext,
   });
 }
