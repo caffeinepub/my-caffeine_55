@@ -1,0 +1,308 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 15,
+  "summary": "Build a Persian-language AI chatbot named «ماما» with a core/central brain concept, supporting private and public chat, storing Q&A data for analysis, integrating external knowledge sources (e.g., Wikipedia), aiming for decentralized operation with transparent reporting, and additionally supporting a more “alive”/empathetic conversation mode for users to درد و دل. UI theme direction updated to a purple/blue/white/black palette.",
+  "architectural_notes": [
+    "Core concept: «مغز مرکزی» organized as 7 interwoven rings (flower-of-life) model.",
+    "Chats are separated into private vs public spaces.",
+    "System stores all Q&A interactions for later analysis and knowledge growth.",
+    "Goal includes decentralized operation with transparency to users.",
+    "Planned external knowledge integrations (Google/Wikipedia-like sources).",
+    "UI theme palette preference changed to بنفش/آبی/سفید/سیاه (overrides prior ‘no blue/purple’ constraint).",
+    "Performance direction request: optimize processing pipeline for higher throughput; user suggests moving from linear processing to vectorized/matrix-based processing where applicable.",
+    "Conceptual dataflow metaphor: treat stored data as «خون» and each new message as «تپش»; each incoming message pushes data toward Mama’s «مغز مرکزی» and triggers refinement/processing across the 7 interwoven rings to produce new answers and feedback."
+  ],
+  "known_issues": [
+    "Conflict: existing UI theme requirement says not to use blue/purple as primary, but user now explicitly requests a purple/blue/white/black theme.",
+    "Bug/regression: users cannot send messages to «ماما»; sending a message triggers an error (needs investigation and fix)."
+  ],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-implement-authentication-using-internet-identity-and-associate-all-stored-chat-data-with-the-authenticated-principal-so-each-user-has-a-private-chat-space",
+      "title": "Implement authentication using Internet Identity and associate all stored chat data with the authenticated principal so each user has a private chat space.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-two-separate-chat-areas-1-private-chat-per-user-and-2-public-chat-shared-global-room-support-sending-messages-in-persian-and-viewing-message-history-in-each-area",
+      "title": "Create two separate chat areas: (1) Private Chat (per-user) and (2) Public Chat (shared global room). Support sending messages in Persian and viewing message history in each area.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-an-initial-mama-brain-module-as-a-deterministic-persian-q-a-engine-given-a-user-prompt-it-returns-a-an-faq-match-response-when-available-otherwise-b-a-fallback-response-indicating-no-known-answer-yet-and-offering-to-store-the-question-for-later-analysis",
+      "title": "Implement an initial “Mama Brain” module as a deterministic Persian Q&A engine: given a user prompt, it returns (a) an FAQ match response when available, otherwise (b) a fallback response indicating no known answer yet and offering to store the question for later analysis.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-support-for-seeding-and-managing-a-large-persian-faq-dataset-targeting-110-000-frequent-q-a-pairs-provide-an-admin-only-import-flow-bulk-upload-and-storage-query-capabilities-to-retrieve-matches-efficiently-for-chat-responses",
+      "title": "Add support for seeding and managing a large Persian FAQ dataset (targeting ~110,000 frequent Q&A pairs): provide an admin-only import flow (bulk upload) and storage/query capabilities to retrieve matches efficiently for chat responses.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-an-external-knowledge-feature-that-can-fetch-and-display-summaries-from-publicly-available-sources-e-g-wikipedia-as-a-supplementary-panel-when-a-user-asks-a-question-without-requiring-third-party-llm-integrations",
+      "title": "Provide an “External Knowledge” feature that can fetch and display summaries from publicly available sources (e.g., Wikipedia) as a supplementary panel when a user asks a question, without requiring third-party LLM integrations.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-transparency-dashboard-that-reports-system-data-to-all-users-total-message-counts-public-private-aggregated-faq-entry-count-and-a-simple-log-of-recent-public-messages-public-only-do-not-expose-private-message-contents-to-other-users",
+      "title": "Add a transparency dashboard that reports system data to all users: total message counts (public + private aggregated), FAQ entry count, and a simple log of recent public messages (public only). Do not expose private message contents to other users.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-represent-the-central-brain-with-7-interwoven-rings-flower-of-life-concept-in-the-ui-as-an-informational-visualization-a-section-that-displays-seven-labeled-modules-e-g-memory-faq-public-chat-private-chat-external-knowledge-analytics-transparency-with-a-static-graphic-background",
+      "title": "Represent the “central brain with 7 interwoven rings / flower-of-life” concept in the UI as an informational visualization: a section that displays seven labeled modules (e.g., Memory, FAQ, Public Chat, Private Chat, External Knowledge, Analytics, Transparency) with a static graphic background.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-coherent-visual-theme-for-the-entire-frontend-colors-typography-spacing-components-suitable-for-a-mama-ai-knowledge-system-do-not-use-blue-purple-as-the-primary-palette",
+      "title": "Apply a coherent visual theme for the entire frontend (colors, typography, spacing, components) suitable for a “Mama” AI knowledge system. Do not use blue & purple as the primary palette.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-generated-static-image-assets-for-mama-branding-and-the-flower-of-life-brain-visualization-and-render-them-in-the-ui-from-frontend-public-assets-generated-do-not-serve-images-through-the-backend",
+      "title": "Add generated static image assets for Mama branding and the flower-of-life brain visualization and render them in the UI from frontend/public/assets/generated (do not serve images through the backend).",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-new-section-to-the-mama-brain-page-that-presents-the-user-provided-persian-origin-story-text-starting-with-and-including-the-full-story-block-as-a-readable-right-to-left-rtl-formatted-card",
+      "title": "Add a new section to the Mama Brain page that presents the user-provided Persian origin story text (starting with «هوش مصنوعی مادر در داستان من قایم شده!» and including the full story block) as a readable, right-to-left (RTL) formatted card.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-mama-brain-page-copy-so-the-external-knowledge-module-description-does-not-claim-support-for-sources-that-are-not-implemented-it-must-explicitly-mention-wikipedia-as-the-supported-source-and-avoid-referencing-google-or-other-encyclopedias-unless-implemented",
+      "title": "Update the Mama Brain page copy so the External Knowledge module description does not claim support for sources that are not implemented; it must explicitly mention Wikipedia as the supported source and avoid referencing Google or other encyclopedias unless implemented.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-translate-all-user-facing-ui-text-from-english-to-persian-fa-across-the-app-including-authentication-screens-navigation-labels-page-headings-descriptions-empty-loading-states-buttons-and-helper-text",
+      "title": "Translate all user-facing UI text from English to Persian (fa) across the app, including authentication screens, navigation labels, page headings/descriptions, empty/loading states, buttons, and helper text.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-switch-the-overall-ui-to-right-to-left-rtl-layout-suitable-for-persian-including-correct-text-alignment-and-component-direction-where-appropriate-navigation-headings-chat-composer-tabs-cards",
+      "title": "Switch the overall UI to right-to-left (RTL) layout suitable for Persian, including correct text alignment and component direction where appropriate (navigation, headings, chat composer, tabs, cards).",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-mama-s-generated-messages-to-be-persian-including-the-fallback-response-text-and-use-a-consistent-persian-mama-prefix-tag-e-g-rather-than-mama",
+      "title": "Update Mama’s generated messages to be Persian, including the fallback response text, and use a consistent Persian Mama prefix/tag (e.g., \"[ماما]\") rather than \"[Mama]\".",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-format-timestamps-and-dates-for-chat-messages-and-transparency-views-using-persian-locale-formatting-fa-ir-so-time-date-display-appears-natural-for-persian-users",
+      "title": "Format timestamps and dates for chat messages and transparency views using Persian locale formatting (fa-IR) so time/date display appears natural for Persian users.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-an-empathetic-emotionally-supportive-mama-response-path-so-users-can-vent-dard-o-del-and-receive-comforting-natural-feeling-replies-without-using-any-external-llms-this-should-work-deterministically-when-no-faq-match-is-found-or-when-the-user-message-indicates-emotional-support-needs-return-a-supportive-response-instead-of-the-current-generic-fallback-the-response-must-stay-in-persian-and-keep-the-existing-mama-prefix-tag-format-e-g",
+      "title": "Implement an “empathetic / emotionally supportive” Mama response path so users can vent (“dard o del”) and receive comforting, natural-feeling replies without using any external LLMs. This should work deterministically: when no FAQ match is found (or when the user message indicates emotional support needs), return a supportive response instead of the current generic fallback. The response must stay in Persian and keep the existing Mama prefix/tag format (e.g., \"[ماما]\").",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-the-global-ui-theme-palette-to-a-purple-blue-white-and-black-scheme-across-light-and-dark-modes-by-updating-the-existing-tailwind-css-theme-variables-e-g-in-frontend-src-index-css-so-primary-secondary-accent-background-foreground-border-ring-and-sidebar-tokens-reflect-the-new-palette-consistently",
+      "title": "Change the global UI theme palette to a purple, blue, white, and black scheme across light and dark modes by updating the existing Tailwind CSS theme variables (e.g., in frontend/src/index.css) so primary/secondary/accent/background/foreground/border/ring and sidebar tokens reflect the new palette consistently.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-regression-where-sending-a-message-in-chatpage-fails-message-not-sent-error-ensuring-authenticated-users-can-reliably-send-messages-in-both-private-and-public-chat-modes-and-the-ui-updates-with-the-new-message-history",
+      "title": "Investigate and fix the regression where sending a message in ChatPage fails (\"message not sent\" + error), ensuring authenticated users can reliably send messages in both Private and Public chat modes and the UI updates with the new message history.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-automatic-correction-for-persian-text-typed-with-an-english-keyboard-layout-e-g-the-user-typed-lhlh-intending-before-processing-sending-messages-to-mama-including-applying-the-same-correction-to-the-faq-lookup-empathetic-response-path-so-mama-responds-to-the-corrected-persian-input",
+      "title": "Implement automatic correction for Persian text typed with an English keyboard layout (e.g., the user typed \"lhlh\" intending \"ماما\") before processing/sending messages to Mama, including applying the same correction to the FAQ lookup + empathetic response path so Mama responds to the corrected Persian input.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-client-side-error-visibility-for-chat-sending-by-surfacing-the-underlying-error-reason-when-available-in-a-safe-user-readable-way-and-logging-enough-detail-for-debugging-without-exposing-sensitive-data",
+      "title": "Improve client-side error visibility for chat sending by surfacing the underlying error reason (when available) in a safe, user-readable way and logging enough detail for debugging without exposing sensitive data.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-profile-and-optimize-end-to-end-chat-message-processing-so-it-scales-well-as-the-faq-dataset-grows-target-110k-entries-avoiding-any-linear-time-scans-on-the-hot-path-and-using-indexed-batched-vectorized-style-processing-where-applicable-e-g-precomputed-indexes-hashed-lookups-chunked-imports-and-minimized-repeated-work-per-message",
+      "title": "Profile and optimize end-to-end chat message processing so it scales well as the FAQ dataset grows (target ~110k entries), avoiding any linear-time scans on the hot path and using indexed/batched/vectorized-style processing where applicable (e.g., precomputed indexes, hashed lookups, chunked imports, and minimized repeated work per message).",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-app-s-visual-theme-so-the-overall-page-background-and-primary-surfaces-are-noticeably-darker-by-default-not-only-when-the-user-manually-enables-dark-mode-while-keeping-text-contrast-accessible-across-all-pages-chat-mama-brain-transparency-auth-screens",
+      "title": "Update the app’s visual theme so the overall page background and primary surfaces are noticeably darker by default (not only when the user manually enables dark mode), while keeping text contrast accessible across all pages (Chat, Mama Brain, Transparency, Auth screens).",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-per-message-processing-pipeline-that-treats-stored-chat-data-as-blood-and-each-new-user-message-as-a-heartbeat-where-every-sent-message-triggers-a-deterministic-7-step-mama-brain-refinement-sequence-before-producing-mama-s-reply",
+      "title": "Implement a per-message processing pipeline that treats stored chat data as “blood” and each new user message as a “heartbeat”, where every sent message triggers a deterministic 7-step “Mama brain refinement” sequence before producing Mama’s reply.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-heartbeat-ui-affordance-to-chatpage-that-visibly-indicates-processing-for-the-latest-message-and-shows-progress-through-the-7-processing-steps-e-g-a-compact-timeline-stepper-with-an-active-pulse-while-the-step-is-running",
+      "title": "Add a “heartbeat” UI affordance to ChatPage that visibly indicates processing for the latest message and shows progress through the 7 processing steps (e.g., a compact timeline/stepper with an active pulse while the step is running).",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-mama-response-generator-to-return-structured-feedback-alongside-the-generated-response-derived-deterministically-from-the-same-pipeline-execution-e-g-which-path-was-used-and-what-was-refined-and-surface-this-feedback-to-the-user-in-the-chat-ui-in-a-lightweight-way",
+      "title": "Extend the Mama response generator to return structured “feedback” alongside the generated response, derived deterministically from the same pipeline execution (e.g., which path was used and what was refined), and surface this feedback to the user in the chat UI in a lightweight way.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Persian-language AI chatbot named «ماما» that can converse accurately with users",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Implement private and public chat spaces (separate areas) for users",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Persist and store all user questions/answers in the system to grow and analyze «ماما»'s knowledge",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Provide a «central brain» core architecture (conceptually described as 7 interwoven rings / flower-of-life) to organize the AI system",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Integrate access to external knowledge sources (e.g., Google, Wikipedia, similar) for answering questions",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Support decentralized operation and transparent reporting of data/behavior to all users",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Seed the system with a large Persian Q&A pattern/FAQ dataset (e.g., ~110k common Q&A pairs) to accelerate early performance",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Persist all user questions and Mama responses in the backend canister, including metadata (chat type: private/public, author principal for private, timestamp). Provide backend query methods to list messages by chat type and to append new messages.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Add an empathetic, emotionally supportive Persian conversation mode so users can “درد و دل” with «ماما» and receive natural, comforting replies (beyond deterministic FAQ-only behavior).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Change the frontend visual theme palette to a combination of purple, blue, white, and black (overriding prior guidance to avoid blue/purple as primary).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Improve processing speed/throughput; keep performance scaling at maximum growth, potentially by replacing linear processing with a more vectorized/matrix-based approach",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Change the overall page theme/background to a darker (dark-mode) look",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Implement a per-message “blood/heartbeat” dataflow: treat stored data as «خون» and each new message as «تپش»، routing data to Mama’s central brain so each incoming message triggers processing/refinement across the 7 rings and enables generating new answers and user feedback.",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "ماما",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

@@ -1,0 +1,68 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-implement-a-per-message-processing-pipeline-that-treats-stored-chat-data-as-blood-and-each-new-user-message-as-a-heartbeat-where-every-sent-message-triggers-a-deterministic-7-step-mama-brain-refinement-sequence-before-producing-mama-s-reply",
+      "featureTitle": "Implement a per-message processing pipeline that treats stored chat data as “blood” and each new user message as a “heartbeat”, where every sent message triggers a deterministic 7-step “Mama brain refinement” sequence before producing Mama’s reply.",
+      "files": [
+        "frontend/src/lib/mamaBrain.ts",
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/pages/ChatPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-24"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-heartbeat-ui-affordance-to-chatpage-that-visibly-indicates-processing-for-the-latest-message-and-shows-progress-through-the-7-processing-steps-e-g-a-compact-timeline-stepper-with-an-active-pulse-while-the-step-is-running",
+      "featureTitle": "Add a “heartbeat” UI affordance to ChatPage that visibly indicates processing for the latest message and shows progress through the 7 processing steps (e.g., a compact timeline/stepper with an active pulse while the step is running).",
+      "files": [
+        "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+        "frontend/src/pages/ChatPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-25"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-extend-the-mama-response-generator-to-return-structured-feedback-alongside-the-generated-response-derived-deterministically-from-the-same-pipeline-execution-e-g-which-path-was-used-and-what-was-refined-and-surface-this-feedback-to-the-user-in-the-chat-ui-in-a-lightweight-way",
+      "featureTitle": "Extend the Mama response generator to return structured “feedback” alongside the generated response, derived deterministically from the same pipeline execution (e.g., which path was used and what was refined), and surface this feedback to the user in the chat UI in a lightweight way.",
+      "files": [
+        "frontend/src/lib/mamaBrain.ts",
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/pages/ChatPage.tsx",
+        "frontend/src/utils/chatErrors.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-26"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

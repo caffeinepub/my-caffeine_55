@@ -1,0 +1,88 @@
+{
+  "kind": "build_request",
+  "title": "Add per-message “heartbeat” dataflow pipeline with 7-ring processing visualization in chat flow",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-24",
+      "text": "Implement a per-message processing pipeline that treats stored chat data as “blood” and each new user message as a “heartbeat”, where every sent message triggers a deterministic 7-step “Mama brain refinement” sequence before producing Mama’s reply.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "داده ها را خون در نظر بگیر\nپیام های جدید را تپش در نظر بگیر\nبا هر پیام خون (داده ها) را به سمت مغز ماما هدایت کن\nاجازه بده با هر پیام مغز ماما داده ها را در 7 حلقه پالایش کند\nاجازه بده ماما پاسخ های جدید بسازد و بازخورد های جدید بدهد به کاربر"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Sending a message in ChatPage triggers a deterministic pipeline run that is explicitly modeled as 7 steps (a fixed-length sequence) per message.",
+        "The pipeline does not introduce any non-deterministic behavior or external LLM calls; it must compose only existing deterministic operations (e.g., keyboard correction, FAQ lookup, empathetic fallback selection, etc.).",
+        "The pipeline executes for both private and public chat modes without breaking the existing send flow (user message stored first, then Mama response stored)."
+      ]
+    },
+    {
+      "id": "REQ-25",
+      "text": "Add a “heartbeat” UI affordance to ChatPage that visibly indicates processing for the latest message and shows progress through the 7 processing steps (e.g., a compact timeline/stepper with an active pulse while the step is running).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "پیام های جدید را تپش در نظر بگیر",
+          "اجازه بده با هر پیام مغز ماما داده ها را در 7 حلقه پالایش کند"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After the user sends a message, the chat UI shows a clearly visible processing indicator while Mama’s response is being generated and sent.",
+        "The indicator displays exactly 7 steps and updates step state as the pipeline progresses (pending → active → completed, and failed if an error occurs).",
+        "If an error happens during any step, the UI surfaces the failure state and the existing error toast behavior remains intact (no regression).",
+        "Once Mama’s response is successfully sent, the indicator transitions to a completed state and can be dismissed/collapsed without affecting message history."
+      ]
+    },
+    {
+      "id": "REQ-26",
+      "text": "Extend the Mama response generator to return structured “feedback” alongside the generated response, derived deterministically from the same pipeline execution (e.g., which path was used and what was refined), and surface this feedback to the user in the chat UI in a lightweight way.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "اجازه بده ماما پاسخ های جدید بسازد و بازخورد های جدید بدهد به کاربر"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Mama response generation returns (in code) both: (1) the final response text to be sent as a message, and (2) a structured feedback object/string produced deterministically from the pipeline run.",
+        "The UI displays the feedback for the latest interaction without storing it as a separate persisted chat message (i.e., it is a UI-only annotation).",
+        "Feedback rendering does not leak sensitive data (e.g., it must not include full user message content in debug-style logs beyond what the app already logs safely)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not edit files under frontend/src/components/ui (Shadcn UI components are read-only).",
+    "Do not modify the immutable authentication/actor hook files listed in SYSTEM_CONTEXT.frontend.immutablePaths.",
+    "Keep all backend logic in the existing single Motoko actor (backend/main.mo). Only introduce backend state migrations if strictly required.",
+    "Do not introduce external databases, third-party auth, WebSockets, or any external LLM integrations."
+  ],
+  "nonGoals": [
+    "Do not change the persisted Message schema in backend/main.mo as part of this change (no new stored fields for pipeline/steps).",
+    "Do not add new knowledge sources beyond the existing Wikipedia external knowledge panel.",
+    "Do not attempt to automatically create or persist new FAQ entries from conversations as part of this change."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

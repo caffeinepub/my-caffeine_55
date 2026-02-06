@@ -1,0 +1,75 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-06T06:05:00.921Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 3,
+    "implemented": 3,
+    "items": [
+      {
+        "id": "REQ-24",
+        "summary": "Implement a per-message processing pipeline that treats stored chat data as “blood” and each new user message as a “heartbeat”, where every sent message triggers a deterministic 7-step “Mama brain refinement” sequence before producing Mama’s reply.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/lib/mamaBrain.ts",
+          "frontend/src/pages/ChatPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/lib/mamaBrain.ts",
+          "frontend/src/pages/ChatPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-25",
+        "summary": "Add a “heartbeat” UI affordance to ChatPage that visibly indicates processing for the latest message and shows progress through the 7 processing steps (e.g., a compact timeline/stepper with an active pulse while the step is running).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+          "frontend/src/pages/ChatPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+          "frontend/src/pages/ChatPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-26",
+        "summary": "Extend the Mama response generator to return structured “feedback” alongside the generated response, derived deterministically from the same pipeline execution (e.g., which path was used and what was refined), and surface this feedback to the user in the chat UI in a lightweight way.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/mamaBrain.ts",
+          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/pages/ChatPage.tsx",
+          "frontend/src/utils/chatErrors.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/mamaBrain.ts",
+          "frontend/src/lib/mamaPipeline.ts",
+          "frontend/src/pages/ChatPage.tsx",
+          "frontend/src/utils/chatErrors.ts"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+    "frontend/src/lib/mamaBrain.ts",
+    "frontend/src/lib/mamaPipeline.ts",
+    "frontend/src/pages/ChatPage.tsx",
+    "frontend/src/utils/chatErrors.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

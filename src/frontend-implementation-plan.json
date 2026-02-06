@@ -1,0 +1,86 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Per-message deterministic 7-step Mama pipeline with heartbeat progress UI and feedback annotation",
+  "requirements": [
+    {
+      "id": "REQ-24",
+      "summary": "Implement a deterministic per-message 7-step “heartbeat” processing pipeline that runs after the user message is stored and before Mama’s reply is stored (works in both private/public modes).",
+      "acceptanceCriteria": [
+        "Sending a message in ChatPage triggers a deterministic pipeline run that is explicitly modeled as 7 steps (a fixed-length sequence) per message.",
+        "The pipeline does not introduce any non-deterministic behavior or external LLM calls; it must compose only existing deterministic operations (e.g., keyboard correction, FAQ lookup, empathetic fallback selection, etc.).",
+        "The pipeline executes for both private and public chat modes without breaking the existing send flow (user message stored first, then Mama response stored)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/mamaPipeline.ts",
+          "operation": "create",
+          "description": "Create a deterministic 7-step “Mama brain refinement” pipeline module that orchestrates step execution, emits step state transitions, and returns the final Mama reply text plus UI-safe run metadata (no persisted fields)."
+        },
+        {
+          "path": "frontend/src/lib/mamaBrain.ts",
+          "operation": "modify",
+          "description": "Refactor/extend the Mama response generation logic to support being invoked as part of the 7-step pipeline (deterministic path selection: FAQ match vs empathetic fallback) while keeping behavior consistent with current replies."
+        },
+        {
+          "path": "frontend/src/pages/ChatPage.tsx",
+          "operation": "modify",
+          "description": "Update the send flow to: (1) send/store the user message first (unchanged behavior), then (2) run the deterministic 7-step pipeline to generate Mama’s reply, then (3) send/store Mama’s reply; ensure it works identically for private/public modes and preserves existing toast/error behavior."
+        }
+      ]
+    },
+    {
+      "id": "REQ-25",
+      "summary": "Add a ChatPage “heartbeat” progress UI that shows a 7-step pipeline timeline/stepper for the latest message, including active pulse, completed, and failed states, and supports collapsing after completion.",
+      "acceptanceCriteria": [
+        "After the user sends a message, the chat UI shows a clearly visible processing indicator while Mama’s response is being generated and sent.",
+        "The indicator displays exactly 7 steps and updates step state as the pipeline progresses (pending → active → completed, and failed if an error occurs).",
+        "If an error happens during any step, the UI surfaces the failure state and the existing error toast behavior remains intact (no regression).",
+        "Once Mama’s response is successfully sent, the indicator transitions to a completed state and can be dismissed/collapsed without affecting message history."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/chat/HeartbeatPipelineIndicator.tsx",
+          "operation": "create",
+          "description": "Implement a compact 7-step timeline/stepper component that renders pending/active/completed/failed states with a heartbeat/pulse affordance for the active step (use existing styling utilities and Shadcn components without editing frontend/src/components/ui). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/ChatPage.tsx",
+          "operation": "modify",
+          "description": "Wire the HeartbeatPipelineIndicator into ChatPage so it appears for the latest interaction during pipeline execution, updates step-by-step from pipeline callbacks, shows failure state on errors, and allows collapse/dismiss after completion without altering message history. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-26",
+      "summary": "Return deterministic structured feedback from the same pipeline run and display it as a lightweight UI-only annotation for the latest interaction (not persisted as a chat message).",
+      "acceptanceCriteria": [
+        "Mama response generation returns (in code) both: (1) the final response text to be sent as a message, and (2) a structured feedback object/string produced deterministically from the pipeline run.",
+        "The UI displays the feedback for the latest interaction without storing it as a separate persisted chat message (i.e., it is a UI-only annotation).",
+        "Feedback rendering does not leak sensitive data (e.g., it must not include full user message content in debug-style logs beyond what the app already logs safely)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/mamaBrain.ts",
+          "operation": "modify",
+          "description": "Extend exported response types/functions to include a deterministic feedback payload (e.g., selected path, refinement flags, and non-sensitive notes) alongside the response content, ensuring feedback does not include full user message content."
+        },
+        {
+          "path": "frontend/src/lib/mamaPipeline.ts",
+          "operation": "modify",
+          "description": "Augment the 7-step pipeline to produce and return a UI-safe structured feedback object derived solely from the pipeline execution (e.g., step outcomes and chosen response source), without persisting it or logging sensitive content."
+        },
+        {
+          "path": "frontend/src/pages/ChatPage.tsx",
+          "operation": "modify",
+          "description": "Display the latest pipeline feedback in ChatPage as a lightweight UI-only annotation (e.g., small collapsible panel near the heartbeat indicator) and ensure it is not sent via sendMessage / not stored as a chat message; keep existing sanitized logging behavior intact."
+        },
+        {
+          "path": "frontend/src/utils/chatErrors.ts",
+          "operation": "modify",
+          "description": "Ensure error/debug utilities continue to avoid leaking sensitive content when pipeline/step errors are logged (e.g., keep logs length-only or summary-only), while preserving existing toast/error behavior."
+        }
+      ]
+    }
+  ]
+}
