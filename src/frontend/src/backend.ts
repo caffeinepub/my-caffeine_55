@@ -89,17 +89,26 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface Message {
-    content: string;
-    author: Principal;
-    timestamp: Time;
-    isPublic: boolean;
+export interface FaqSuggestion {
+    createdAt: Time;
+    sourceContent: string;
+    sourceAuthor: Principal;
+    suggestedQuestion: string;
+    sourceMessageId: MessageId;
 }
 export interface FaqEntry {
     question: string;
     answer: string;
 }
 export type Time = bigint;
+export type MessageId = bigint;
+export interface Message {
+    id: MessageId;
+    content: string;
+    author: Principal;
+    timestamp: Time;
+    isPublic: boolean;
+}
 export interface MamaFeedbackMetadata {
     explanation: string;
     userPrompt: string;
@@ -117,6 +126,7 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addFaqEntry(question: string, answer: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    calculateVarietySeed(): Promise<[bigint, boolean]>;
     clearFeedbackMetadata(): Promise<void>;
     findFaqMatch(question: string): Promise<FaqEntry | null>;
     getAllCategoryStats(): Promise<Array<[string, number, bigint]>>;
@@ -131,16 +141,27 @@ export interface backendInterface {
     getChatStats(): Promise<[bigint, bigint, bigint]>;
     getFeedbackMetadata(): Promise<MamaFeedbackMetadata | null>;
     getNewPublicMessages(): Promise<Array<Message>>;
-    getPppOptIn(): Promise<boolean>;
+    getPendingFaqSuggestions(): Promise<Array<FaqSuggestion>>;
+    getPersonalizedVarietySeed(): Promise<bigint | null>;
     getPrivateMessages(): Promise<Array<Message>>;
     getPublicMessages(): Promise<Array<Message>>;
+    getPubliclyAccessibleStats(): Promise<{
+        totalPublicMessages: bigint;
+        totalFaqEntries: bigint;
+        totalPrivateMessages: bigint;
+    }>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getVarietySeedWithFallback(): Promise<bigint>;
+    hasPersonalizedVarietySeed(): Promise<boolean>;
+    ignoreFaqSuggestion(question: string): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
+    promoteFaqSuggestion(question: string, answer: string): Promise<void>;
+    resetPersonalizedVarietySeed(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveFeedbackMetadata(metadata: MamaFeedbackMetadata): Promise<void>;
     searchFaqsByKeyword(keyword: string): Promise<Array<FaqEntry>>;
-    sendMessage(content: string, isPublic: boolean): Promise<void>;
-    setPppOptIn(optIn: boolean): Promise<void>;
+    sendMessage(content: string, isPublic: boolean): Promise<MessageId>;
+    setPersonalizedVarietySeed(seed: bigint): Promise<void>;
     storeAnonymizedSignal(category: string, normalizedScore: number): Promise<void>;
 }
 import type { FaqEntry as _FaqEntry, MamaFeedbackMetadata as _MamaFeedbackMetadata, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
@@ -186,6 +207,26 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
             return result;
+        }
+    }
+    async calculateVarietySeed(): Promise<[bigint, boolean]> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.calculateVarietySeed();
+                return [
+                    result[0],
+                    result[1]
+                ];
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.calculateVarietySeed();
+            return [
+                result[0],
+                result[1]
+            ];
         }
     }
     async clearFeedbackMetadata(): Promise<void> {
@@ -340,18 +381,32 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getPppOptIn(): Promise<boolean> {
+    async getPendingFaqSuggestions(): Promise<Array<FaqSuggestion>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPppOptIn();
+                const result = await this.actor.getPendingFaqSuggestions();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPppOptIn();
+            const result = await this.actor.getPendingFaqSuggestions();
             return result;
+        }
+    }
+    async getPersonalizedVarietySeed(): Promise<bigint | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPersonalizedVarietySeed();
+                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPersonalizedVarietySeed();
+            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
         }
     }
     async getPrivateMessages(): Promise<Array<Message>> {
@@ -382,6 +437,24 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getPubliclyAccessibleStats(): Promise<{
+        totalPublicMessages: bigint;
+        totalFaqEntries: bigint;
+        totalPrivateMessages: bigint;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPubliclyAccessibleStats();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPubliclyAccessibleStats();
+            return result;
+        }
+    }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
@@ -396,6 +469,48 @@ export class Backend implements backendInterface {
             return from_candid_opt_n4(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getVarietySeedWithFallback(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getVarietySeedWithFallback();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getVarietySeedWithFallback();
+            return result;
+        }
+    }
+    async hasPersonalizedVarietySeed(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.hasPersonalizedVarietySeed();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.hasPersonalizedVarietySeed();
+            return result;
+        }
+    }
+    async ignoreFaqSuggestion(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.ignoreFaqSuggestion(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.ignoreFaqSuggestion(arg0);
+            return result;
+        }
+    }
     async isCallerAdmin(): Promise<boolean> {
         if (this.processError) {
             try {
@@ -407,6 +522,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    async promoteFaqSuggestion(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.promoteFaqSuggestion(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.promoteFaqSuggestion(arg0, arg1);
+            return result;
+        }
+    }
+    async resetPersonalizedVarietySeed(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.resetPersonalizedVarietySeed();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.resetPersonalizedVarietySeed();
             return result;
         }
     }
@@ -452,7 +595,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async sendMessage(arg0: string, arg1: boolean): Promise<void> {
+    async sendMessage(arg0: string, arg1: boolean): Promise<MessageId> {
         if (this.processError) {
             try {
                 const result = await this.actor.sendMessage(arg0, arg1);
@@ -466,17 +609,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async setPppOptIn(arg0: boolean): Promise<void> {
+    async setPersonalizedVarietySeed(arg0: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setPppOptIn(arg0);
+                const result = await this.actor.setPersonalizedVarietySeed(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setPppOptIn(arg0);
+            const result = await this.actor.setPersonalizedVarietySeed(arg0);
             return result;
         }
     }
@@ -516,6 +659,9 @@ function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MamaFeedbackMetadata]): MamaFeedbackMetadata | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_variant_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {

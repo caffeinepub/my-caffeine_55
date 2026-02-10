@@ -1,108 +1,114 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Privacy-preserving learning opt-in + deterministic anti-repetition + aggregate-signal-informed public responses (frontend-only)",
+  "title": "Automatic angle expansion + deeper deterministic Mama responses + transparency indicators",
   "requirements": [
     {
-      "id": "REQ-33",
-      "summary": "Add an opt-in privacy-preserving learning flow in the UI that only contributes anonymized, non-reversible aggregate signals (no raw private text) and never exposes per-user private-derived content.",
+      "id": "REQ-1",
+      "summary": "Add a fully automatic deterministic “angle expansion” layer to Mama’s response pipeline (no user configuration) while preserving existing FAQ/civic/empathetic paths and the 7-step pipeline UI.",
       "acceptanceCriteria": [
-        "A user can explicitly enable/disable contributing private-chat signals (opt-in default is OFF).",
-        "When enabled, sending a private message results in only anonymized/aggregate data being persisted; no private raw message text is written to any new public-memory structure.",
-        "There is no backend query that returns any per-user private-message-derived content or allows reconstruction of private messages.",
-        "Disabling the opt-in stops future contributions; existing aggregate signals remain aggregate and non-attributable to the user."
+        "When a user sends messages in both Private and Public chat, Mama can respond using multiple internally-generated angles (e.g., clarification, step-by-step guidance, reframing, pros/cons, example, summary, next-steps) without any user configuration UI.",
+        "Angle selection is deterministic (works with existing anti-repetition + optional aggregateSeed) and still respects current paths (FAQ match, civic-empowerment, empathetic) instead of breaking them.",
+        "The existing pipeline step visualization continues to work; if additional internal logic is added, it must not break current 7-step statuses rendering in ChatPage."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/mamaAngles.ts",
+          "operation": "create",
+          "description": "Create a deterministic internal “angle expansion” module that (1) derives candidate angles from a normalized user message, (2) selects one or more angles deterministically using message features + optional aggregateSeed, and (3) exposes stable template keys for anti-repetition across all new angles. Keep it UI-less and privacy-preserving (no storage, no raw-text logging)."
+        },
+        {
+          "path": "frontend/src/lib/mamaPipeline.ts",
+          "operation": "modify",
+          "description": "Integrate the new angle expansion layer into the existing 7-step pipeline without changing step definitions/count. Keep existing routing: civic-empowerment detection remains first, FAQ match remains second, and non-FAQ paths can internally select multiple angles/templates deterministically. Extend anti-repetition so new angle templates also participate via selectedTemplateKey (and any additional internal keys as needed) while keeping the returned PipelineStep list compatible with HeartbeatPipelineIndicator."
+        },
+        {
+          "path": "frontend/src/pages/ChatPage.tsx",
+          "operation": "modify",
+          "description": "Update pipeline invocation/wiring so both Private and Public chat modes can pass deterministic inputs (lastTemplateKey + public aggregateSeed) to the expanded pipeline and continue to render the same 7-step visualization. Ensure no new user configuration UI is introduced."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Increase non-FAQ response depth/structure (“Q&A pattern squared”) deterministically and safely, preserving Mama tone/prefix and anti-repetition behavior, and continuing to use aggregate variety seed in Public chat.",
+      "acceptanceCriteria": [
+        "For non-FAQ responses, Mama replies include deeper structure more often (at least one of: short diagnosis, 2–5 actionable steps, reflective question, alternative perspective, or concise summary), while preserving the existing Mama tone and prefix behavior.",
+        "Repetition avoidance remains effective: consecutive messages should not select the same template key when a suitable alternative exists (continue using lastTemplateKey and extend template-keying to any new angle templates).",
+        "Public chat continues to use backend-provided aggregate variety seed (getAggregateVarietySeed) to diversify deterministic selection across the population."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/mamaDepthTemplates.ts",
+          "operation": "create",
+          "description": "Add a deterministic library of deeper, structured, non-FAQ response templates (diagnosis/steps/question/reframe/summary/next-steps/pros-cons/examples) with explicit template keys and safety constraints. Ensure templates preserve the existing Mama tone and rely on enforceMamaPrefix/normalizePersianText for consistent output."
+        },
+        {
+          "path": "frontend/src/lib/mamaPipeline.ts",
+          "operation": "modify",
+          "description": "Augment non-FAQ response generation to compose deeper structured replies more frequently by selecting and combining one or more structures from the new depth templates. Ensure selection remains deterministic with aggregateSeed (Public) and respects anti-repetition by avoiding reuse of the same template key when alternatives exist. Keep FAQ responses unchanged and keep civic-empowerment path behavior intact."
+        },
+        {
+          "path": "frontend/src/utils/persianText.ts",
+          "operation": "modify",
+          "description": "Extend deterministic Persian text post-processing to better support multi-section structured answers (e.g., consistent newline collapsing and punctuation spacing) while preserving the canonical [ماما] prefix behavior. Avoid adding any content-dependent logging or unsafe transformations."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Make the self-improvement loop more explicit and robust by expanding privacy-preserving learning signals client-side and using aggregate stats/seed to bias deterministic angle/template selection over time (no raw private text stored).",
+      "acceptanceCriteria": [
+        "Private chat continues to automatically derive anonymized signals client-side and store them via storeAnonymizedSignal; no raw message text is ever sent through this learning-signal path.",
+        "Backend continues to expose aggregate stats/seed (existing getAllCategoryStats / getAggregateVarietySeed) and does not introduce any endpoint that returns raw private message content.",
+        "The frontend uses aggregate stats and/or aggregate seed to adjust deterministic selection among angles/templates (e.g., biasing toward underrepresented categories/angles), and this behavior is observable via changed template-key distribution across repeated test messages (without requiring user settings)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/utils/privacyPreservingSignals.ts",
+          "operation": "modify",
+          "description": "Expand anonymized signal derivation heuristics to produce richer privacy-preserving categories (still non-reversible and aggregate-friendly) such as coarse intent buckets (question/help/decision), tone buckets, and structure preference hints. Ensure the function output contains only category strings + normalized numeric scores and never includes raw message text or identifiers."
+        },
+        {
+          "path": "frontend/src/lib/mamaSelectionBias.ts",
           "operation": "create",
-          "description": "Create deterministic client-side derivation for privacy-preserving learning signals from a normalized private message (e.g., coarse category buckets + numeric score), explicitly returning ONLY numeric/aggregate fields (no raw text), suitable for calling storeAnonymizedSignal."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add React Query hooks/mutations for privacy-preserving learning preference and signal ingestion (getPppOptIn, setPppOptIn, storeAnonymizedSignal), ensuring mutation payloads do not include any raw message content."
+          "description": "Create a deterministic biasing helper that consumes aggregate anonymized category stats (from getAllCategoryStats) and/or aggregate variety seed to adjust selection among angles/templates (e.g., favor underrepresented angles/categories) while remaining deterministic and stable. Provide a small, testable API that returns weighted angle/template priorities without any storage of raw text."
         },
         {
           "path": "frontend/src/pages/ChatPage.tsx",
           "operation": "modify",
-          "description": "Integrate the opt-in state into the Private Chat experience: load preference on entry, default OFF when unknown, and when enabled trigger anonymized signal ingestion derived from corrected+normalized text (without sending raw text) after the user message is sent."
-        }
-      ]
-    },
-    {
-      "id": "REQ-35",
-      "summary": "Add deterministic anti-repetition to the Mama pipeline to avoid repeating the same template consecutively in a chat session, and include the required Persian “new angle” trigger phrase when it triggers.",
-      "acceptanceCriteria": [
-        "If the pipeline would select the same empathetic (or civic-empowerment) template as the most recent Mama message in the current chat UI session, it deterministically selects a different template instead.",
-        "When the anti-repetition strategy triggers, the returned response content includes the Persian phrase exactly: «لرد، بذار یه زاویه جدید باز کنیم».",
-        "The anti-repetition logic remains deterministic (same inputs + same recent-history state yields the same output).",
-        "FAQ-sourced answers are not modified beyond existing normalization/prefix rules (anti-repetition does not rewrite factual FAQ answers)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/mamaPipeline.ts",
-          "operation": "modify",
-          "description": "Extend runMamaPipeline to accept a small deterministic session-history input (e.g., last template key/index for empathetic/civic responses) and implement anti-repetition: if the newly selected template matches the most recent Mama template in-session, deterministically select an alternate template and append the exact trigger phrase «لرد، بذار یه زاویه جدید باز کنیم» to the response content (apply only for empathetic/civic, not for FAQ)."
-        },
-        {
-          "path": "frontend/src/pages/ChatPage.tsx",
-          "operation": "modify",
-          "description": "Track the most recent Mama template selection in the current UI session (per chat mode) and pass it into runMamaPipeline; after sending Mama’s response, update the stored last-template key so the next pipeline call can deterministically avoid repetition."
-        }
-      ]
-    },
-    {
-      "id": "REQ-36",
-      "summary": "Wire the opt-in learning control into the Private Chat UI and ensure enabled private sends ingest only anonymized signals after correction/normalization (and never for Public Chat).",
-      "acceptanceCriteria": [
-        "Private Chat UI includes a clearly labeled toggle/control for enabling/disabling privacy-preserving learning (user-facing text in the UI for this control is in Persian as per the app’s existing localization; this build request remains in English).",
-        "The toggle state is persisted per-user via backend preference APIs and restored on reload/login.",
-        "When enabled, sending a private message results in a follow-up call that ingests anonymized signals only; the payload must not include the raw message content field.",
-        "Public Chat sending does not ingest signals from other users’ public messages via this opt-in mechanism (signals are derived only from the opting-in user’s private messages)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
-          "operation": "create",
-          "description": "Create a small Private Chat-only UI control (Persian label + short explanation) to enable/disable privacy-preserving learning; implement with existing shadcn-ui primitives (e.g., Switch/Label/Card if present). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/ChatPage.tsx",
-          "operation": "modify",
-          "description": "Render the privacy-preserving learning toggle only when mode==='private'; bind it to getPppOptIn/setPppOptIn hooks and show appropriate loading/disabled states. Ensure signal ingestion is executed only for private messages and only when the opt-in is enabled."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add/extend hooks to persist and restore the opt-in toggle state per user via backend methods (getPppOptIn/setPppOptIn), and a mutation for storeAnonymizedSignal; ensure errors are handled without blocking chat sends."
-        }
-      ]
-    },
-    {
-      "id": "REQ-37",
-      "summary": "Use aggregate public-memory signals as a deterministic input to Public Chat response selection to improve variety/grounding, without revealing private origins and with graceful fallback on failure.",
-      "acceptanceCriteria": [
-        "Public Chat pipeline can query aggregate public memory signals and deterministically use them to influence response selection (e.g., selecting among templates/categories) without adding any private content to the response.",
-        "Mama responses in Public Chat never mention or imply that they were informed by private chat (no phrases like “from your private chat…” or similar).",
-        "No UI panel displays the public-memory signals in a way that could reveal private content; usage is internal to response selection only.",
-        "If the memory-signal query fails, the pipeline falls back to existing behavior without breaking message sending."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a query hook to fetch aggregate, non-sensitive public memory signals for internal use (e.g., useGetAllCategoryStats using the existing backendInterface). Do not surface these values directly in the UI."
+          "description": "Wire aggregate stats into the pipeline selection path (in addition to the existing public aggregateSeed): fetch aggregate category stats (useGetAllCategoryStats) and pass them into the Mama pipeline so angle/template selection can be deterministically biased without user settings. Keep private learning-signal submission automatic and ensure no raw private text is sent via the signal path."
         },
         {
           "path": "frontend/src/lib/mamaPipeline.ts",
           "operation": "modify",
-          "description": "Add an optional deterministic aggregate-signal input (e.g., a numeric seed derived from aggregate stats) that can influence template selection in Public Chat only; ensure the response text never references any private-chat origin and preserve existing FAQ answer behavior."
+          "description": "Accept optional aggregate anonymized stats (and/or derived bias signals) and apply them during deterministic angle/template selection for non-FAQ responses. Ensure the bias affects template-key distribution across repeated messages while maintaining anti-repetition guarantees and preserving the 7-step status flow returned to ChatPage."
         },
         {
-          "path": "frontend/src/pages/ChatPage.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "In Public Chat mode, fetch aggregate signals and pass a derived deterministic seed into runMamaPipeline; on query failure/timeouts, proceed with current pipeline behavior (no send breakage) and do not display any signal details in the UI."
+          "description": "Add/extend query options support (e.g., refetchInterval/staleTime) for useGetAllCategoryStats (and any new aggregate selection inputs) so ChatPage can keep aggregate data reasonably fresh without adding new UI settings."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Extend TransparencyPage with high-level self-improvement indicators from aggregate stats (variety seed + top anonymized categories), preserving the existing 15s refresh and showing only anonymized/aggregate data.",
+      "acceptanceCriteria": [
+        "TransparencyPage shows at least: (1) the current aggregate variety seed value, and (2) a list of anonymized categories with counts/averages sourced from backend aggregate stats endpoints.",
+        "The UI clearly contains only aggregate/anonymized data; no raw prompts, no per-user private message content, and no identifiers are displayed.",
+        "Auto-refresh behavior (existing 15s refresh pattern) continues to work for the new indicators."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/TransparencyPage.tsx",
+          "operation": "modify",
+          "description": "Add a new self-improvement indicators section that queries and displays (1) the current aggregate variety seed (useGetAggregateVarietySeed) and (2) a small table/list of top anonymized categories from aggregate stats (useGetAllCategoryStats), including count/average fields as available. Reuse the existing 15s auto-refresh pattern for the new queries and include clear UI copy that the data is aggregate/anonymized only."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Ensure the aggregate seed and aggregate category stats hooks support the TransparencyPage refresh pattern (15s) and return safe fallbacks on actor unavailability/errors, without exposing any raw message content."
         }
       ]
     }

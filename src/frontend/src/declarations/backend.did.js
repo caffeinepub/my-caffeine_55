@@ -24,17 +24,27 @@ export const MamaFeedbackMetadata = IDL.Record({
   'userPrompt' : IDL.Text,
   'category' : IDL.Text,
 });
+export const MessageId = IDL.Nat;
 export const Message = IDL.Record({
+  'id' : MessageId,
   'content' : IDL.Text,
   'author' : IDL.Principal,
   'timestamp' : Time,
   'isPublic' : IDL.Bool,
+});
+export const FaqSuggestion = IDL.Record({
+  'createdAt' : Time,
+  'sourceContent' : IDL.Text,
+  'sourceAuthor' : IDL.Principal,
+  'suggestedQuestion' : IDL.Text,
+  'sourceMessageId' : MessageId,
 });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addFaqEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'calculateVarietySeed' : IDL.Func([], [IDL.Nat, IDL.Bool], ['query']),
   'clearFeedbackMetadata' : IDL.Func([], [], []),
   'findFaqMatch' : IDL.Func([IDL.Text], [IDL.Opt(FaqEntry)], ['query']),
   'getAllCategoryStats' : IDL.Func(
@@ -69,20 +79,41 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getNewPublicMessages' : IDL.Func([], [IDL.Vec(Message)], []),
-  'getPppOptIn' : IDL.Func([], [IDL.Bool], ['query']),
+  'getPendingFaqSuggestions' : IDL.Func(
+      [],
+      [IDL.Vec(FaqSuggestion)],
+      ['query'],
+    ),
+  'getPersonalizedVarietySeed' : IDL.Func([], [IDL.Opt(IDL.Nat)], ['query']),
   'getPrivateMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
   'getPublicMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
+  'getPubliclyAccessibleStats' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'totalPublicMessages' : IDL.Nat,
+          'totalFaqEntries' : IDL.Nat,
+          'totalPrivateMessages' : IDL.Nat,
+        }),
+      ],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getVarietySeedWithFallback' : IDL.Func([], [IDL.Nat], ['query']),
+  'hasPersonalizedVarietySeed' : IDL.Func([], [IDL.Bool], ['query']),
+  'ignoreFaqSuggestion' : IDL.Func([IDL.Text], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'promoteFaqSuggestion' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'resetPersonalizedVarietySeed' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveFeedbackMetadata' : IDL.Func([MamaFeedbackMetadata], [], []),
   'searchFaqsByKeyword' : IDL.Func([IDL.Text], [IDL.Vec(FaqEntry)], ['query']),
-  'sendMessage' : IDL.Func([IDL.Text, IDL.Bool], [], []),
-  'setPppOptIn' : IDL.Func([IDL.Bool], [], []),
+  'sendMessage' : IDL.Func([IDL.Text, IDL.Bool], [MessageId], []),
+  'setPersonalizedVarietySeed' : IDL.Func([IDL.Nat], [], []),
   'storeAnonymizedSignal' : IDL.Func([IDL.Text, IDL.Float64], [], []),
 });
 
@@ -102,17 +133,27 @@ export const idlFactory = ({ IDL }) => {
     'userPrompt' : IDL.Text,
     'category' : IDL.Text,
   });
+  const MessageId = IDL.Nat;
   const Message = IDL.Record({
+    'id' : MessageId,
     'content' : IDL.Text,
     'author' : IDL.Principal,
     'timestamp' : Time,
     'isPublic' : IDL.Bool,
+  });
+  const FaqSuggestion = IDL.Record({
+    'createdAt' : Time,
+    'sourceContent' : IDL.Text,
+    'sourceAuthor' : IDL.Principal,
+    'suggestedQuestion' : IDL.Text,
+    'sourceMessageId' : MessageId,
   });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addFaqEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'calculateVarietySeed' : IDL.Func([], [IDL.Nat, IDL.Bool], ['query']),
     'clearFeedbackMetadata' : IDL.Func([], [], []),
     'findFaqMatch' : IDL.Func([IDL.Text], [IDL.Opt(FaqEntry)], ['query']),
     'getAllCategoryStats' : IDL.Func(
@@ -147,15 +188,36 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getNewPublicMessages' : IDL.Func([], [IDL.Vec(Message)], []),
-    'getPppOptIn' : IDL.Func([], [IDL.Bool], ['query']),
+    'getPendingFaqSuggestions' : IDL.Func(
+        [],
+        [IDL.Vec(FaqSuggestion)],
+        ['query'],
+      ),
+    'getPersonalizedVarietySeed' : IDL.Func([], [IDL.Opt(IDL.Nat)], ['query']),
     'getPrivateMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
     'getPublicMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
+    'getPubliclyAccessibleStats' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'totalPublicMessages' : IDL.Nat,
+            'totalFaqEntries' : IDL.Nat,
+            'totalPrivateMessages' : IDL.Nat,
+          }),
+        ],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getVarietySeedWithFallback' : IDL.Func([], [IDL.Nat], ['query']),
+    'hasPersonalizedVarietySeed' : IDL.Func([], [IDL.Bool], ['query']),
+    'ignoreFaqSuggestion' : IDL.Func([IDL.Text], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'promoteFaqSuggestion' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'resetPersonalizedVarietySeed' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveFeedbackMetadata' : IDL.Func([MamaFeedbackMetadata], [], []),
     'searchFaqsByKeyword' : IDL.Func(
@@ -163,8 +225,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(FaqEntry)],
         ['query'],
       ),
-    'sendMessage' : IDL.Func([IDL.Text, IDL.Bool], [], []),
-    'setPppOptIn' : IDL.Func([IDL.Bool], [], []),
+    'sendMessage' : IDL.Func([IDL.Text, IDL.Bool], [MessageId], []),
+    'setPersonalizedVarietySeed' : IDL.Func([IDL.Nat], [], []),
     'storeAnonymizedSignal' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   });
 };

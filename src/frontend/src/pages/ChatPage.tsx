@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useGetPrivateMessages, useGetPublicMessages, useSendMessage, useFindFaqMatch, useSaveFeedbackMetadata, useGetPppOptIn, useStoreAnonymizedSignal, useGetAllCategoryStats } from '../hooks/useQueries';
+import { useGetPrivateMessages, useGetPublicMessages, useSendMessage, useFindFaqMatch, useSaveFeedbackMetadata, useStoreAnonymizedSignal, useGetAggregateVarietySeed, useGetAllCategoryStats } from '../hooks/useQueries';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatComposer } from '../components/chat/ChatComposer';
 import { ExternalKnowledgePanel } from '../components/external-knowledge/ExternalKnowledgePanel';
 import { HeartbeatPipelineIndicator } from '../components/chat/HeartbeatPipelineIndicator';
-import { PrivacyPreservingLearningToggle } from '../components/chat/PrivacyPreservingLearningToggle';
 import { runMamaPipeline, type PipelineStep, type PipelineFeedback } from '../lib/mamaPipeline';
 import { extractErrorInfo, createDebugLog } from '../utils/chatErrors';
 import { sanitizeUserPrompt, normalizePersianText } from '../utils/persianText';
@@ -40,9 +39,9 @@ export function ChatPage({ mode }: ChatPageProps) {
   const sendMessage = useSendMessage();
   const findFaqMatch = useFindFaqMatch();
   const saveFeedbackMetadata = useSaveFeedbackMetadata();
-  const { data: pppOptIn } = useGetPppOptIn();
   const storeSignal = useStoreAnonymizedSignal();
-  const { data: categoryStats } = useGetAllCategoryStats();
+  const { data: aggregateSeed } = useGetAggregateVarietySeed();
+  const { data: aggregateStats } = useGetAllCategoryStats();
 
   const messages = mode === 'private' ? privateMessages.data : publicMessages.data;
   const isLoading = mode === 'private' ? privateMessages.isLoading : publicMessages.isLoading;
@@ -68,7 +67,7 @@ export function ChatPage({ mode }: ChatPageProps) {
       throw new Error('Not authenticated');
     }
 
-    // Check actor readiness - block send if still connecting
+    // Check actor readiness
     if (!isReady || readiness.status === 'connecting') {
       toast.error('در حال اتصال... لطفاً لحظه‌ای صبر کنید', {
         description: 'اتصال در حال برقراری است',
@@ -82,17 +81,16 @@ export function ChatPage({ mode }: ChatPageProps) {
     setLatestFeedback(null);
 
     try {
-      // Step 1: Send user message first (unchanged behavior)
+      // Step 1: Send user message first
       await sendMessage.mutateAsync({ content, isPublic });
 
-      // Step 2: Derive aggregate seed for Public Chat (deterministic variety)
-      let aggregateSeed: number | undefined;
-      if (isPublic && categoryStats && categoryStats.length > 0) {
-        // Use sum of all category scores as seed
-        aggregateSeed = categoryStats.reduce((sum, [_, score]) => sum + score, 0);
+      // Step 2: Prepare pipeline inputs with aggregate data
+      let pipelineSeed: number | undefined;
+      if (isPublic && aggregateSeed !== undefined && aggregateSeed > 0) {
+        pipelineSeed = aggregateSeed;
       }
 
-      // Step 3: Run the 7-step Mama brain pipeline with anti-repetition
+      // Step 3: Run the enhanced 7-step Mama brain pipeline with angle expansion + depth
       const pipelineResult = await runMamaPipeline(
         content,
         async (question) => {
@@ -103,7 +101,8 @@ export function ChatPage({ mode }: ChatPageProps) {
           setPipelineSteps(steps);
         },
         lastTemplateKey,
-        aggregateSeed
+        pipelineSeed,
+        aggregateStats // Pass aggregate stats for bias calculation
       );
 
       // Update last template key for next message
@@ -119,11 +118,13 @@ export function ChatPage({ mode }: ChatPageProps) {
       const feedbackCategory = 
         pipelineResult.feedback.responseSource === 'faq' ? 'دانش' :
         pipelineResult.feedback.responseSource === 'civic-empowerment' ? 'توانمندسازی مدنی' :
+        pipelineResult.feedback.selectedAngle ? `زاویه: ${pipelineResult.feedback.selectedAngle}` :
         'همدلانه';
       
       const feedbackExplanation = 
         pipelineResult.feedback.responseSource === 'faq' ? 'پاسخ از بانک دانش ماما' :
         pipelineResult.feedback.responseSource === 'civic-empowerment' ? 'راهنمایی مدنی و مسالمت‌آمیز' :
+        pipelineResult.feedback.depthApplied ? `پاسخ ساختاریافته با زاویه ${pipelineResult.feedback.selectedAngle}` :
         `پاسخ همدلانه شماره ${(pipelineResult.feedback.empatheticIndex || 0) + 1}`;
 
       try {
@@ -133,21 +134,19 @@ export function ChatPage({ mode }: ChatPageProps) {
           userPrompt: sanitizeUserPrompt(content),
         });
       } catch (error) {
-        // Non-critical: log but don't block the flow
         console.error('Failed to save feedback metadata:', error instanceof Error ? error.message : 'Unknown error');
       }
 
-      // Step 5: Privacy-preserving learning (Private Chat only, opt-in)
-      if (!isPublic && pppOptIn) {
+      // Step 5: Automatic privacy-preserving learning (Private Chat only)
+      if (!isPublic) {
         try {
-          // Correct and normalize the message
           const correctionResult = correctPersianKeyboard(content);
           const normalizedMessage = normalizePersianText(correctionResult.corrected);
           
-          // Derive anonymized signals (NO raw text)
+          // Derive expanded anonymized signals
           const signals = deriveAnonymizedSignals(normalizedMessage);
           
-          // Store each signal (non-blocking)
+          // Store each signal (non-blocking, automatic)
           for (const signal of signals) {
             storeSignal.mutate({
               category: signal.category,
@@ -155,7 +154,6 @@ export function ChatPage({ mode }: ChatPageProps) {
             });
           }
         } catch (error) {
-          // Non-critical: log but don't block
           console.error('Failed to store anonymized signals:', error instanceof Error ? error.message : 'Unknown error');
         }
       }
@@ -174,11 +172,12 @@ export function ChatPage({ mode }: ChatPageProps) {
         toast.success('پاسخ در مغز ماما یافت شد!');
       } else if (pipelineResult.feedback.responseSource === 'civic-empowerment') {
         toast.success('ماما راهنمایی مدنی ارائه داد');
+      } else if (pipelineResult.feedback.depthApplied) {
+        toast.success('ماما با عمق بیشتر پاسخ داد');
       } else {
         toast.success('ماما با محبت پاسخ داد');
       }
     } catch (error) {
-      // Create structured debug log with all required fields
       createDebugLog('send', error, { 
         isPublic, 
         contentLength: content.length,
@@ -188,7 +187,6 @@ export function ChatPage({ mode }: ChatPageProps) {
       
       const errorInfo = extractErrorInfo(error);
       
-      // Only show login CTA for auth-class errors
       if (errorInfo.classification === 'auth') {
         toast.error(errorInfo.userMessage, {
           action: {
@@ -197,7 +195,6 @@ export function ChatPage({ mode }: ChatPageProps) {
           },
         });
       } else if (errorInfo.classification === 'actor-not-ready') {
-        // Non-blocking connecting status - already handled by UI
         toast.error(errorInfo.userMessage, {
           description: 'لطفاً منتظر بمانید تا اتصال کامل شود',
         });
@@ -205,7 +202,6 @@ export function ChatPage({ mode }: ChatPageProps) {
         toast.error(errorInfo.userMessage);
       }
       
-      // Re-throw to prevent composer from clearing
       throw error;
     }
   };
@@ -216,10 +212,8 @@ export function ChatPage({ mode }: ChatPageProps) {
 
   const allStepsCompleted = pipelineSteps.length > 0 && pipelineSteps.every(s => s.status === 'completed');
 
-  // Determine if send should be disabled
   const canSend = isAuthenticated && isReady;
 
-  // Get Persian label for response source
   const getResponseSourceLabel = (source: string) => {
     switch (source) {
       case 'faq':
@@ -244,8 +238,8 @@ export function ChatPage({ mode }: ChatPageProps) {
               </h2>
               <p className="text-sm text-muted-foreground">
                 {mode === 'private' 
-                  ? 'گفتگوی شخصی شما با ماما' 
-                  : 'به بحث جامعه بپیوندید'}
+                  ? 'گفتگوی شخصی شما با ماما - یادگیری خودکار فعال است' 
+                  : 'به بحث جامعه بپیوندید - تنوع خودکار فعال است'}
               </p>
             </div>
             {!isAuthenticated && (
@@ -255,11 +249,6 @@ export function ChatPage({ mode }: ChatPageProps) {
               </Button>
             )}
           </div>
-
-          {/* Privacy-preserving learning toggle (Private Chat only) */}
-          {mode === 'private' && isAuthenticated && (
-            <PrivacyPreservingLearningToggle />
-          )}
 
           <Tabs value={showExternalKnowledge ? 'knowledge' : 'chat'} onValueChange={(v) => setShowExternalKnowledge(v === 'knowledge')}>
             <TabsList className="grid w-full grid-cols-2">
@@ -293,6 +282,16 @@ export function ChatPage({ mode }: ChatPageProps) {
                           <span className="font-semibold">منبع پاسخ:</span>{' '}
                           {getResponseSourceLabel(latestFeedback.responseSource)}
                         </p>
+                        {latestFeedback.selectedAngle && (
+                          <p className="text-muted-foreground">
+                            <span className="font-semibold">زاویه انتخابی:</span> {latestFeedback.selectedAngle}
+                          </p>
+                        )}
+                        {latestFeedback.depthApplied && (
+                          <p className="text-muted-foreground">
+                            <span className="font-semibold">عمق ساختاری:</span> اعمال شد
+                          </p>
+                        )}
                         {latestFeedback.correctionApplied && (
                           <p className="text-muted-foreground">
                             <span className="font-semibold">اصلاح کیبورد:</span> اعمال شد

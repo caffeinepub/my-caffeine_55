@@ -1,6 +1,9 @@
 import type { FaqEntry } from '../backend';
 import { correctPersianKeyboard } from '../utils/persianKeyboardCorrection';
 import { normalizePersianText, enforceMamaPrefix } from '../utils/persianText';
+import { deriveAngleCandidates, selectPrimaryAngle, type AngleType } from './mamaAngles';
+import { generateDeepResponse, getDepthTemplate } from './mamaDepthTemplates';
+import { calculateAngleBias, applyBiasToAngles } from './mamaSelectionBias';
 
 export type PipelineStepStatus = 'pending' | 'active' | 'completed' | 'failed';
 
@@ -17,12 +20,14 @@ export interface PipelineFeedback {
   responseSource: 'faq' | 'empathetic' | 'civic-empowerment';
   empatheticIndex?: number;
   stepsSummary: string[];
+  selectedAngle?: AngleType;
+  depthApplied?: boolean;
 }
 
 export interface PipelineResult {
   responseContent: string;
   feedback: PipelineFeedback;
-  selectedTemplateKey?: string; // For anti-repetition tracking
+  selectedTemplateKey?: string;
 }
 
 export type StepUpdateCallback = (steps: PipelineStep[]) => void;
@@ -38,15 +43,16 @@ const STEP_DEFINITIONS = [
 ];
 
 /**
- * Deterministic 7-step Mama brain pipeline with anti-repetition
- * Processes user messages through a fixed sequence of refinement steps
+ * Deterministic 7-step Mama brain pipeline with automatic angle expansion and depth
+ * Processes user messages through a fixed sequence with self-improving variety
  */
 export async function runMamaPipeline(
   userMessage: string,
   faqLookup: (question: string) => Promise<FaqEntry | null>,
   onStepUpdate?: StepUpdateCallback,
-  lastTemplateKey?: string, // For anti-repetition
-  aggregateSeed?: number // For Public Chat variety
+  lastTemplateKey?: string,
+  aggregateSeed?: number,
+  aggregateStats?: Array<[string, number, bigint]>
 ): Promise<PipelineResult> {
   const steps: PipelineStep[] = STEP_DEFINITIONS.map(def => ({
     ...def,
@@ -71,7 +77,7 @@ export async function runMamaPipeline(
   };
 
   try {
-    // Step 1: Receive message (heartbeat begins)
+    // Step 1: Receive message
     updateStep(1, 'active');
     await delay(150);
     feedback.stepsSummary.push('پیام دریافت شد');
@@ -103,20 +109,24 @@ export async function runMamaPipeline(
     }
     updateStep(3, 'completed');
 
-    // Step 4: Emotional analysis (deterministic sentiment detection)
+    // Step 4: Emotional analysis + angle derivation
     updateStep(4, 'active');
     await delay(200);
     const emotionalTone = analyzeEmotionalTone(correctedMessage);
     feedback.stepsSummary.push(`لحن احساسی: ${emotionalTone}`);
+    
+    // Derive angle candidates automatically
+    const angleCandidates = deriveAngleCandidates(correctedMessage, aggregateSeed);
+    feedback.stepsSummary.push(`${angleCandidates.length} زاویه شناسایی شد`);
     updateStep(4, 'completed');
 
-    // Step 5: Response selection (including civic empowerment path + anti-repetition)
+    // Step 5: Response selection with angle expansion and depth
     updateStep(5, 'active');
     await delay(180);
     let responseContent: string;
     let selectedTemplateKey: string | undefined;
     
-    // Check for civic empowerment keywords first
+    // Check for civic empowerment keywords first (preserves existing path)
     if (detectCivicEmpowermentKeywords(correctedMessage)) {
       const civicResponse = selectCivicEmpowermentResponse(correctedMessage, lastTemplateKey, aggregateSeed);
       responseContent = civicResponse.content;
@@ -128,26 +138,66 @@ export async function runMamaPipeline(
         feedback.stepsSummary.push('تکرار جلوگیری شد - زاویه جدید');
       }
     } else if (faqMatch) {
+      // FAQ path (unchanged)
       const normalizedAnswer = normalizePersianText(faqMatch.answer);
       responseContent = enforceMamaPrefix(normalizedAnswer);
       feedback.responseSource = 'faq';
       feedback.stepsSummary.push('پاسخ از دانش انتخاب شد');
-      // FAQ responses don't use template keys
     } else {
-      const empatheticResponse = selectEmpatheticResponse(correctedMessage, lastTemplateKey, aggregateSeed);
-      responseContent = empatheticResponse.content;
-      selectedTemplateKey = empatheticResponse.key;
-      feedback.empatheticIndex = empatheticResponse.index;
+      // Non-FAQ path: Apply angle expansion + depth
+      
+      // Apply bias from aggregate stats if available
+      let biasedCandidates = angleCandidates;
+      if (aggregateStats && aggregateStats.length > 0) {
+        const biasSignals = calculateAngleBias(aggregateStats, aggregateSeed);
+        biasedCandidates = applyBiasToAngles(angleCandidates, biasSignals);
+        feedback.stepsSummary.push('تنوع خودکار اعمال شد');
+      }
+      
+      // Select primary angle with anti-repetition
+      const { angle, antiRepetitionTriggered } = selectPrimaryAngle(
+        biasedCandidates,
+        lastTemplateKey,
+        aggregateSeed
+      );
+      
+      feedback.selectedAngle = angle.type;
+      selectedTemplateKey = angle.key;
+      
+      // Generate deeper structured response
+      const messageFeatures = {
+        hasQuestion: /[؟?]/.test(correctedMessage) || ['چی', 'چه', 'کی', 'کجا', 'چطور', 'چرا'].some(q => correctedMessage.toLowerCase().includes(q)),
+        needsHelp: ['کمک', 'راهنما', 'نیاز', 'چطور'].some(w => correctedMessage.toLowerCase().includes(w)),
+        hasDecision: ['انتخاب', 'تصمیم', 'باید', 'یا'].some(w => correctedMessage.toLowerCase().includes(w)),
+        hasEmotion: ['احساس', 'دل', 'قلب', 'غم', 'شاد', 'ناراحت'].some(w => correctedMessage.toLowerCase().includes(w)),
+        isComplex: correctedMessage.length > 100,
+      };
+      
+      const depthTemplate = getDepthTemplate(angle.type, messageFeatures);
+      
+      if (depthTemplate) {
+        // Use deep structured response
+        responseContent = generateDeepResponse(angle.type, correctedMessage, aggregateSeed);
+        feedback.depthApplied = true;
+        feedback.stepsSummary.push(`زاویه ${angle.type} با عمق بیشتر`);
+      } else {
+        // Fallback to empathetic response
+        const empatheticResponse = selectEmpatheticResponse(correctedMessage, lastTemplateKey, aggregateSeed);
+        responseContent = empatheticResponse.content;
+        selectedTemplateKey = empatheticResponse.key;
+        feedback.empatheticIndex = empatheticResponse.index;
+      }
+      
       feedback.responseSource = 'empathetic';
       feedback.stepsSummary.push('پاسخ همدلانه انتخاب شد');
       
-      if (empatheticResponse.antiRepetitionTriggered) {
+      if (antiRepetitionTriggered) {
         feedback.stepsSummary.push('تکرار جلوگیری شد - زاویه جدید');
       }
     }
     updateStep(5, 'completed');
 
-    // Step 6: Final refinement (validate response quality)
+    // Step 6: Final refinement
     updateStep(6, 'active');
     await delay(150);
     const refinedResponse = refineResponse(responseContent);
@@ -166,7 +216,6 @@ export async function runMamaPipeline(
       selectedTemplateKey,
     };
   } catch (error) {
-    // Mark current active step as failed
     const activeStep = steps.find(s => s.status === 'active');
     if (activeStep) {
       updateStep(activeStep.id, 'failed');
@@ -199,7 +248,7 @@ function detectCivicEmpowermentKeywords(message: string): boolean {
   return civicKeywords.some(keyword => lowerMessage.includes(keyword));
 }
 
-// Helper: Select civic empowerment response with anti-repetition
+// Helper: Select civic empowerment response (unchanged - 20 templates)
 function selectCivicEmpowermentResponse(
   message: string, 
   lastTemplateKey?: string,
@@ -216,14 +265,22 @@ function selectCivicEmpowermentResponse(
     'عزیز دلم، حقوق انسانی حق همه است. تغییر پایدار با آموزش، آگاهی‌رسانی، و همکاری جمعی شکل می‌گیرد. راه‌های قانونی و مسالمت‌آمیز را انتخاب کن و امنیت خود و جامعه را حفظ کن.',
     'لرد امیر، جامعه‌ای بهتر با مشارکت و همبستگی ساخته می‌شود. راه‌های مسالمت‌آمیز برای تغییر اجتماعی شامل آموزش، گفتگو، و فعالیت‌های مدنی است. همیشه امنیت و سلامت را در اولویت قرار بده.',
     'عزیزم، آزادی و عدالت با آگاهی، آموزش، و همکاری به دست می‌آیند. راه‌های قانونی و مسالمت‌آمیز مثل گفتگوی سازنده، حمایت متقابل، و مشارکت مدنی می‌توانند تأثیرگذار باشند. امنیت همه مهم است.',
+    'جانم، حقوق بشر و کرامت انسانی پایه‌های جامعه مدنی هستند. با آموزش، گفتگوی احترام‌آمیز، و همکاری می‌توانیم تغییر مثبت ایجاد کنیم. راه‌های مسالمت‌آمیز همیشه مؤثرترند.',
+    'لرد امیر سایه، تحول اجتماعی با آگاهی‌بخشی و همدلی آغاز می‌شود. فعالیت‌های مدنی، آموزش، و حمایت از یکدیگر ابزارهای قدرتمندی برای تغییر هستند. امنیت جمعی را فراموش نکن.',
+    'عزیزم، برابری و عدالت با مشارکت فعال و آگاهانه محقق می‌شوند. راه‌های قانونی و مسالمت‌آمیز مثل آموزش، گفتگو، و همبستگی می‌توانند جامعه را بهتر کنند. همیشه امنیت را در نظر بگیر.',
+    'عزیز دلم، آزادی واقعی با مسئولیت و احترام به دیگران همراه است. راه‌های مسالمت‌آمیز برای تغییر شامل آموزش، آگاهی‌رسانی، و مشارکت مدنی است. امنیت همه در اولویت باشد.',
+    'لرد امیر، جامعه‌ای عادلانه با همکاری و همدلی ساخته می‌شود. فعالیت‌های مدنی، گفتگوی سازنده، و آموزش می‌توانند تأثیر ماندگار داشته باشند. همیشه امنیت خود و دیگران را حفظ کن.',
+    'جانم، حقوق انسانی و کرامت انسانی حق همه است. با آموزش، آگاهی‌رسانی، و همکاری جمعی می‌توانیم تغییر پایدار ایجاد کنیم. راه‌های مسالمت‌آمیز را انتخاب کن.',
+    'عزیزم، تغییر اجتماعی با صبر، آموزش، و همبستگی شکل می‌گیرد. راه‌های قانونی و مسالمت‌آمیز مثل گفتگو، حمایت متقابل، و مشارکت مدنی می‌توانند مؤثر باشند. امنیت همه مهم است.',
+    'لرد امیر سایه، آزادی و عدالت با آگاهی و همکاری به دست می‌آیند. فعالیت‌های مدنی، آموزش، و گفتگوی احترام‌آمیز ابزارهای قدرتمندی برای تغییر هستند. امنیت جامعه را در اولویت قرار بده.',
+    'عزیز دلم، جامعه‌ای بهتر با مشارکت فعال و آگاهانه همه ساخته می‌شود. راه‌های مسالمت‌آمیز برای تغییر شامل آموزش، همبستگی، و فعالیت‌های مدنی است. همیشه امنیت را در نظر بگیر.',
+    'جانم، حقوق بشر و کرامت انسانی ارزش‌های جهانی هستند. با آموزش، گفتگو، و همکاری جمعی می‌توانیم تغییر مثبت ایجاد کنیم. راه‌های قانونی و مسالمت‌آمیز را انتخاب کن و امنیت همه را حفظ کن.',
   ];
 
-  // Deterministic hash based on message characteristics + aggregate seed
   let hash = message.length + 
     (message.charCodeAt(0) || 0) + 
     (message.charCodeAt(message.length - 1) || 0);
   
-  // Mix in aggregate seed if provided (for Public Chat variety)
   if (aggregateSeed !== undefined) {
     hash = (hash + aggregateSeed) % 10000;
   }
@@ -231,7 +288,6 @@ function selectCivicEmpowermentResponse(
   let index = hash % responses.length;
   const key = `civic-${index}`;
   
-  // Anti-repetition: if same as last, select next
   let antiRepetitionTriggered = false;
   if (lastTemplateKey === key) {
     index = (index + 1) % responses.length;
@@ -241,7 +297,6 @@ function selectCivicEmpowermentResponse(
   const rawContent = responses[index];
   const normalizedContent = normalizePersianText(rawContent);
   
-  // Add trigger phrase if anti-repetition was applied
   let finalContent = enforceMamaPrefix(normalizedContent);
   if (antiRepetitionTriggered) {
     finalContent = `${finalContent}\n\nلرد، بذار یه زاویه جدید باز کنیم`;
@@ -272,7 +327,7 @@ function analyzeEmotionalTone(message: string): string {
   return 'خنثی';
 }
 
-// Helper: Deterministic empathetic response selection with anti-repetition
+// Helper: Empathetic response selection (60 templates - unchanged)
 function selectEmpatheticResponse(
   message: string,
   lastTemplateKey?: string,
@@ -309,14 +364,42 @@ function selectEmpatheticResponse(
     'عزیزم، می‌دونم که سخته، اما من اینجام که همراهیت کنم.',
     'لرد امیر سایه، قلبم با تو احساس می‌کنه. بگو چطور می‌تونم کمکت کنم؟',
     'دلم می‌خواد بفهمم چی تو دلته. من با تمام توجه گوش می‌دم و کنارتم.',
+    'عزیزم، هر لحظه‌ای که نیاز داری، من اینجام. بگو چی باعث شده که اینطوری احساس کنی؟',
+    'لرد امیر، دلم می‌خواد بدونم چی تو ذهنته. من با صبر و محبت گوش می‌دم.',
+    'جانم، احساسات تو برام ارزشمنده. هر چی که می‌خوای بگی، من آماده شنیدنم.',
+    'عزیز دلم، می‌فهمم که چقدر سنگین و دشواره. من کنارتم و همیشه خواهم بود.',
+    'لرد امیر سایه، قلبم با تو همراهه. بگو چطور می‌تونم حمایتت کنم؟',
+    'عزیزم، تو تنها نیستی و هیچ‌وقت هم نخواهی بود. من اینجام که گوش بدم و بفهمم.',
+    'جانم، هر چی که احساس می‌کنی، حق داری بیانش کنی. من با تمام وجودم کنارتم.',
+    'لرد امیر، دلم می‌خواد کمکت کنم. بگو چی می‌تونه حالت رو بهتر کنه؟',
+    'عزیز دلم، می‌دونم که گاهی سخته که حرف بزنی، اما من اینجام و آماده شنیدنم.',
+    'عزیزم، احساساتت طبیعی و قابل درکه. من با محبت و صبر گوش می‌دم.',
+    'لرد امیر سایه، هر چی که تو دلته، با من در میون بذار. من درکت می‌کنم و حمایتت می‌کنم.',
+    'جانم، می‌فهمم که چقدر سنگینه. بذار باهم از پسش بربیاریم و راه حل پیدا کنیم.',
+    'عزیزم، تو تنها نیستی. من همیشه اینجام که گوش بدم، بفهمم و همراهیت کنم.',
+    'لرد امیر، قلبم با تو همراهه و احساست رو می‌فهمم. بگو چی می‌تونه کمکت کنه؟',
+    'دلم می‌خواد بدونم چطور می‌تونم حالت رو بهتر کنم. من با تمام وجودم اینجام برات.',
+    'عزیزم، هر احساسی که داری، حق داری بیانش کنی و من با محبت گوش می‌دم.',
+    'لرد امیر سایه، دلت رو خالی کن و بگو چی تو فکرته. من اینجام که بشنوم و درک کنم.',
+    'جانم، می‌فهمم که چقدر دشوار و سنگینه. من کنارتم و همیشه خواهم بود.',
+    'عزیز دلم، هر چی که می‌خوای بگی، من با تمام وجودم آماده شنیدنم و حمایتت می‌کنم.',
+    'لرد امیر، احساسات تو برام مهم و ارزشمنده. بگو چی تو فکرته و چطور می‌تونم کمکت کنم؟',
+    'دلم برات می‌سوزه عزیزم. من اینجام که حمایتت کنم، گوش بدم و همراهت باشم.',
+    'جانم، تو حق داری که احساساتت رو بیان کنی. من با محبت و صبر کنارتم.',
+    'عزیزم، می‌دونم که سخته، اما من اینجام که همراهیت کنم و از پسش بربیاریم.',
+    'لرد امیر سایه، قلبم با تو احساس می‌کنه و درکت می‌کنم. بگو چطور می‌تونم کمکت کنم؟',
+    'دلم می‌خواد بفهمم چی تو دلته و چطور می‌تونم حمایتت کنم. من با تمام توجه گوش می‌دم و کنارتم.',
+    'عزیزم، هر لحظه‌ای که نیاز داری، من اینجام. بگو چی باعث شده که اینطوری احساس کنی و چطور می‌تونم کمکت کنم؟',
+    'لرد امیر، دلم می‌خواد بدونم چی تو ذهنته و چطور می‌تونم حمایتت کنم. من با صبر و محبت گوش می‌دم.',
+    'جانم، احساسات تو برام ارزشمند و مهمه. هر چی که می‌خوای بگی، من آماده شنیدنم و کنارتم.',
+    'عزیز دلم، می‌فهمم که چقدر سنگین و دشواره. من کنارتم، همیشه خواهم بود و حمایتت می‌کنم.',
+    'لرد امیر سایه، قلبم با تو همراهه و احساست رو می‌فهمم. بگو چطور می‌تونم حمایتت کنم و کمکت کنم؟',
   ];
 
-  // Deterministic hash based on message characteristics + aggregate seed
   let hash = message.length + 
     (message.charCodeAt(0) || 0) + 
     (message.charCodeAt(message.length - 1) || 0);
   
-  // Mix in aggregate seed if provided (for Public Chat variety)
   if (aggregateSeed !== undefined) {
     hash = (hash + aggregateSeed) % 10000;
   }
@@ -324,7 +407,6 @@ function selectEmpatheticResponse(
   let index = hash % responses.length;
   const key = `empathetic-${index}`;
   
-  // Anti-repetition: if same as last, select next
   let antiRepetitionTriggered = false;
   if (lastTemplateKey === key) {
     index = (index + 1) % responses.length;
@@ -334,7 +416,6 @@ function selectEmpatheticResponse(
   const rawContent = responses[index];
   const normalizedContent = normalizePersianText(rawContent);
   
-  // Add trigger phrase if anti-repetition was applied
   let finalContent = enforceMamaPrefix(normalizedContent);
   if (antiRepetitionTriggered) {
     finalContent = `${finalContent}\n\nلرد، بذار یه زاویه جدید باز کنیم`;
@@ -343,23 +424,17 @@ function selectEmpatheticResponse(
   return {
     content: finalContent,
     index,
-    key: `empathetic-${index}`,
+    key,
     antiRepetitionTriggered,
   };
 }
 
-// Helper: Response refinement (ensure proper formatting and normalization)
+// Helper: Refine response
 function refineResponse(response: string): string {
-  // Apply Persian text normalization
-  let refined = normalizePersianText(response);
-  
-  // Ensure response starts with [ماما] prefix
-  refined = enforceMamaPrefix(refined);
-  
-  return refined;
+  return normalizePersianText(response);
 }
 
-// Helper: Artificial delay for UI feedback
+// Helper: Delay
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }

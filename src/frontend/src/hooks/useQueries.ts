@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useActorReadiness } from './useActorReadiness';
-import type { UserProfile, Message, FaqEntry, MamaFeedbackMetadata } from '../backend';
+import type { UserProfile, Message, FaqEntry, MamaFeedbackMetadata, FaqSuggestion } from '../backend';
 
 // User Profile Queries
 export function useGetCallerUserProfile() {
@@ -53,7 +53,7 @@ export function useGetPrivateMessages() {
   });
 }
 
-export function useGetPublicMessages() {
+export function useGetPublicMessages(options?: { refetchInterval?: number }) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Message[]>({
@@ -63,6 +63,7 @@ export function useGetPublicMessages() {
       return actor.getPublicMessages();
     },
     enabled: !!actor && !actorFetching,
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -72,12 +73,10 @@ export function useSendMessage() {
 
   return useMutation({
     mutationFn: async ({ content, isPublic }: { content: string; isPublic: boolean }) => {
-      // Enhanced actor readiness check
       if (!actor) {
         throw new Error('Actor not available');
       }
       
-      // Ensure we're in ready state for authenticated sends
       if (readiness.status === 'connecting') {
         throw new Error('Actor still initializing, please wait');
       }
@@ -89,17 +88,17 @@ export function useSendMessage() {
       await actor.sendMessage(content, isPublic);
     },
     onSuccess: (_, variables) => {
-      // Invalidate and refetch the appropriate message list
       if (variables.isPublic) {
         queryClient.invalidateQueries({ queryKey: ['publicMessages'] });
       } else {
         queryClient.invalidateQueries({ queryKey: ['privateMessages'] });
       }
-      // Also invalidate stats
       queryClient.invalidateQueries({ queryKey: ['chatStats'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTransparencyStats'] });
+      queryClient.invalidateQueries({ queryKey: ['aggregateVarietySeed'] });
+      queryClient.invalidateQueries({ queryKey: ['allCategoryStats'] });
     },
     onError: (error) => {
-      // Log error without exposing message content
       console.error('Send message mutation failed:', error instanceof Error ? error.message : 'Unknown error');
     },
   });
@@ -128,6 +127,7 @@ export function useAddFaqEntry() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatStats'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTransparencyStats'] });
     },
   });
 }
@@ -146,7 +146,7 @@ export function useIsCallerAdmin() {
   });
 }
 
-// Transparency Queries
+// Transparency Queries (Admin-only)
 export function useGetChatStats() {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -157,6 +157,37 @@ export function useGetChatStats() {
       return actor.getChatStats();
     },
     enabled: !!actor && !actorFetching,
+  });
+}
+
+// Public Transparency Stats (No authentication required)
+export function useGetPublicTransparencyStats(options?: { refetchInterval?: number }) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<{
+    totalPublicMessages: bigint;
+    totalPrivateMessages: bigint;
+    totalFaqEntries: bigint;
+  }>({
+    queryKey: ['publicTransparencyStats'],
+    queryFn: async () => {
+      if (!actor) {
+        return {
+          totalPublicMessages: BigInt(0),
+          totalPrivateMessages: BigInt(0),
+          totalFaqEntries: BigInt(0),
+        };
+      }
+      return actor.getPubliclyAccessibleStats();
+    },
+    enabled: !!actor && !actorFetching,
+    refetchInterval: options?.refetchInterval,
+    retry: 1,
+    placeholderData: {
+      totalPublicMessages: BigInt(0),
+      totalPrivateMessages: BigInt(0),
+      totalFaqEntries: BigInt(0),
+    },
   });
 }
 
@@ -204,52 +235,28 @@ export function useClearFeedbackMetadata() {
   });
 }
 
-// Privacy-Preserving Learning Queries
-export function useGetPppOptIn() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['pppOptIn'],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.getPppOptIn();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-export function useSetPppOptIn() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (optIn: boolean) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.setPppOptIn(optIn);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pppOptIn'] });
-    },
-  });
-}
-
+// Privacy-Preserving Learning - Automatic signal storage
 export function useStoreAnonymizedSignal() {
   const { actor } = useActor();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ category, normalizedScore }: { category: string; normalizedScore: number }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.storeAnonymizedSignal(category, normalizedScore);
     },
-    // Non-critical: don't invalidate queries or block on error
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aggregateVarietySeed'] });
+      queryClient.invalidateQueries({ queryKey: ['allCategoryStats'] });
+    },
     onError: (error) => {
       console.error('Failed to store anonymized signal:', error instanceof Error ? error.message : 'Unknown error');
     },
   });
 }
 
-// Aggregate signal queries for Public Chat
-export function useGetAllCategoryStats() {
+// Aggregate signal queries with refresh support for TransparencyPage
+export function useGetAllCategoryStats(options?: { refetchInterval?: number; staleTime?: number }) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Array<[string, number, bigint]>>({
@@ -259,7 +266,74 @@ export function useGetAllCategoryStats() {
       return actor.getAllCategoryStats();
     },
     enabled: !!actor && !actorFetching,
-    staleTime: 30000, // Cache for 30 seconds
-    retry: 1, // Only retry once on failure
+    staleTime: options?.staleTime ?? 30000,
+    refetchInterval: options?.refetchInterval,
+    retry: 1,
+    placeholderData: [],
+  });
+}
+
+// Aggregate variety seed for deterministic Public Chat variety
+export function useGetAggregateVarietySeed(options?: { refetchInterval?: number; staleTime?: number }) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<number>({
+    queryKey: ['aggregateVarietySeed'],
+    queryFn: async () => {
+      if (!actor) return 0;
+      const seed = await actor.getVarietySeedWithFallback();
+      return Number(seed);
+    },
+    enabled: !!actor && !actorFetching,
+    staleTime: options?.staleTime ?? 30000,
+    refetchInterval: options?.refetchInterval,
+    retry: 1,
+    placeholderData: 0,
+  });
+}
+
+// FAQ Suggestion Queries (Admin-only)
+export function useGetPendingFaqSuggestions() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<FaqSuggestion[]>({
+    queryKey: ['pendingFaqSuggestions'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getPendingFaqSuggestions();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useIgnoreFaqSuggestion() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (question: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.ignoreFaqSuggestion(question);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingFaqSuggestions'] });
+    },
+  });
+}
+
+export function usePromoteFaqSuggestion() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ question, answer }: { question: string; answer: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.promoteFaqSuggestion(question, answer);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingFaqSuggestions'] });
+      queryClient.invalidateQueries({ queryKey: ['chatStats'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTransparencyStats'] });
+    },
   });
 }

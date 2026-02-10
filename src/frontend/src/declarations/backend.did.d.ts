@@ -11,17 +11,26 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface FaqEntry { 'question' : string, 'answer' : string }
+export interface FaqSuggestion {
+  'createdAt' : Time,
+  'sourceContent' : string,
+  'sourceAuthor' : Principal,
+  'suggestedQuestion' : string,
+  'sourceMessageId' : MessageId,
+}
 export interface MamaFeedbackMetadata {
   'explanation' : string,
   'userPrompt' : string,
   'category' : string,
 }
 export interface Message {
+  'id' : MessageId,
   'content' : string,
   'author' : Principal,
   'timestamp' : Time,
   'isPublic' : boolean,
 }
+export type MessageId = bigint;
 export type Time = bigint;
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
@@ -31,6 +40,7 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addFaqEntry' : ActorMethod<[string, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'calculateVarietySeed' : ActorMethod<[], [bigint, boolean]>,
   'clearFeedbackMetadata' : ActorMethod<[], undefined>,
   'findFaqMatch' : ActorMethod<[string], [] | [FaqEntry]>,
   'getAllCategoryStats' : ActorMethod<[], Array<[string, number, bigint]>>,
@@ -50,16 +60,30 @@ export interface _SERVICE {
   'getChatStats' : ActorMethod<[], [bigint, bigint, bigint]>,
   'getFeedbackMetadata' : ActorMethod<[], [] | [MamaFeedbackMetadata]>,
   'getNewPublicMessages' : ActorMethod<[], Array<Message>>,
-  'getPppOptIn' : ActorMethod<[], boolean>,
+  'getPendingFaqSuggestions' : ActorMethod<[], Array<FaqSuggestion>>,
+  'getPersonalizedVarietySeed' : ActorMethod<[], [] | [bigint]>,
   'getPrivateMessages' : ActorMethod<[], Array<Message>>,
   'getPublicMessages' : ActorMethod<[], Array<Message>>,
+  'getPubliclyAccessibleStats' : ActorMethod<
+    [],
+    {
+      'totalPublicMessages' : bigint,
+      'totalFaqEntries' : bigint,
+      'totalPrivateMessages' : bigint,
+    }
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getVarietySeedWithFallback' : ActorMethod<[], bigint>,
+  'hasPersonalizedVarietySeed' : ActorMethod<[], boolean>,
+  'ignoreFaqSuggestion' : ActorMethod<[string], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'promoteFaqSuggestion' : ActorMethod<[string, string], undefined>,
+  'resetPersonalizedVarietySeed' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveFeedbackMetadata' : ActorMethod<[MamaFeedbackMetadata], undefined>,
   'searchFaqsByKeyword' : ActorMethod<[string], Array<FaqEntry>>,
-  'sendMessage' : ActorMethod<[string, boolean], undefined>,
-  'setPppOptIn' : ActorMethod<[boolean], undefined>,
+  'sendMessage' : ActorMethod<[string, boolean], MessageId>,
+  'setPersonalizedVarietySeed' : ActorMethod<[bigint], undefined>,
   'storeAnonymizedSignal' : ActorMethod<[string, number], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

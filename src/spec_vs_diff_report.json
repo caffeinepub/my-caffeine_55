@@ -1,50 +1,56 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T07:02:52.754Z",
-  "summary": "Diff adds a Private Chat opt-in toggle UI and a frontend-only anonymized signal derivation utility, plus wiring hooks/usages suggesting PPP integration and public-chat variety seeding. However, the provided backend diff snippet does not show the required new authenticated APIs for opt-in preference, signal ingestion, or aggregate querying, and the mamaPipeline diff snippet is truncated before any verifiable anti-repetition behavior or the required Persian trigger phrase inclusion.",
-  "missing_requirements": [
-    {
-      "id": "REQ-34",
-      "requirement": "Implement backend storage and APIs for anonymized public memory signals (set/get opt-in preference, ingest anonymized signals rejecting raw text fields, and query aggregate stats), all within backend/main.mo with auth checks.",
-      "reason": "Although backend/main.mo shows new in-memory maps for pppOptIn and anonymizedSignals, the diff snippet does not include any new public/shared/query methods to set/get opt-in, ingest signals, or query aggregate signals, nor any explicit rejection of raw-text fields in an ingest method.",
-      "evidence": [
-        "backend/main.mo (truncated; shows `pppOptIn` and `anonymizedSignals` maps but no new PPP methods visible)"
-      ]
-    },
-    {
-      "id": "REQ-35",
-      "requirement": "Extend mamaPipeline with deterministic anti-repetition to avoid repeating the same template in-session; when triggered include exactly «لرد، بذار یه زاویه جدید باز کنیم»; do not modify FAQ answers beyond existing rules.",
-      "reason": "frontend/src/lib/mamaPipeline.ts is truncated before the response selection logic where anti-repetition and the exact trigger phrase would be implemented, so the required behavior and exact Persian phrase cannot be verified from the provided diff summary.",
-      "evidence": [
-        "frontend/src/lib/mamaPipeline.ts (truncated before response selection logic; no visible occurrence of the exact phrase)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-09T07:40:45.056Z",
+  "summary": "Core REQ-1/2/3/4 functionality appears largely implemented: new deterministic angle expansion + deeper structured templates integrated into the existing 7-step pipeline, aggregate-stats/seed-based deterministic biasing, expanded client-side anonymized signals, and TransparencyPage indicators with auto-refresh. However, the diff also includes multiple unrelated UI/feature changes (admin pages, styling/theme, Wikipedia hook, Persian UI rewrites) that were not requested, and there is a backend-side automatic learning-signal collection addition that is not explicitly requested (and could conflict with the intent that private-chat signals be derived client-side).",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Enhanced actor readiness/authentication gating and new error handling in send-message mutation (e.g., blocking while connecting/anonymous, additional logging).",
-      "reason": "Not part of REQ-33–REQ-37; this is additional behavior beyond the requested privacy-preserving learning + anti-repetition + aggregate-signal variety changes.",
+      "description": "Backend-side automatic learning signal storage derived directly from message content (in addition to client-side anonymized signal derivation).",
+      "reason": "REQ-3 specifies private chat signals are derived client-side and stored via storeAnonymizedSignal; adding a separate backend automatic-learning path is not requested and may be redundant/contrary to the intended architecture.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts (modified): `useSendMessage` adds readiness.status checks for 'connecting'/'anonymous' and new error handling"
+        "backend/main.mo (added private func storeAutomaticLearningSignal(content : Text, _caller : Principal) ...)"
       ]
     },
     {
-      "description": "Added UI card styling and loading spinner behavior for the opt-in toggle component (lucide Loader2, Card layout).",
-      "reason": "REQ-36 requires a simple Persian toggle and persistence; the specific card-based presentation and spinner are extra UI enhancements not explicitly requested.",
+      "description": "Admin-only FAQ bulk import page and related admin feature changes/removals.",
+      "reason": "Not requested in BuildRequest (and BuildRequest non-goals do not mention admin tooling).",
       "evidence": [
-        "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx (added)"
+        "frontend-file-summaries.txt (\"frontend/src/pages/admin/AdminFaqImportPage.tsx\": Admin-only page for bulk importing FAQ entries...)",
+        "frontend-file-summaries.txt (multiple entries describing admin pages removed / admin menu removed)"
+      ]
+    },
+    {
+      "description": "External knowledge/Wikipedia integration hooks and UI changes (or continued inclusion) beyond the requested angle/depth/self-improvement/transparency scope.",
+      "reason": "BuildRequest does not request adding or changing external knowledge integrations; only prohibits external AI/LLM integrations.",
+      "evidence": [
+        "frontend-file-summaries.txt (\"frontend/src/hooks/useWikipediaSummary.ts\": ... searches Wikipedia ...)",
+        "frontend-file-summaries.txt (\"frontend/src/components/external-knowledge/ExternalKnowledgePanel.tsx\": ...)"
+      ]
+    },
+    {
+      "description": "Large-scale Persian UI text rewrites and RTL/layout/theme redesign changes (dark mode palette, tailwind theme changes, document-level RTL).",
+      "reason": "Not requested by the BuildRequest; these are broad UI/branding changes unrelated to the specified requirements.",
+      "evidence": [
+        "frontend-file-summaries.txt (\"frontend/src/index.css\": ... OKLCH ... defaulting to dark mode ...)",
+        "frontend-file-summaries.txt (\"frontend/tailwind.config.js\": ... extended theme ...)",
+        "frontend-file-summaries.txt (\"frontend/index.html\": ... RTL direction ...)",
+        "frontend-file-summaries.txt (multiple components with Persian UI text updates)"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.74,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/mamaAngles.ts",
+    "frontend/src/lib/mamaDepthTemplates.ts",
     "frontend/src/lib/mamaPipeline.ts",
+    "frontend/src/lib/mamaSelectionBias.ts",
     "frontend/src/pages/ChatPage.tsx",
+    "frontend/src/pages/TransparencyPage.tsx",
+    "frontend/src/utils/persianText.ts",
     "frontend/src/utils/privacyPreservingSignals.ts",
     "project_state.json"
   ]

@@ -9,7 +9,7 @@ export function BrandHeader({ userName }: BrandHeaderProps) {
     <header className="border-b border-border bg-card/50 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <LoginButton />
             {userName && (
               <span className="text-sm text-muted-foreground hidden sm:inline">

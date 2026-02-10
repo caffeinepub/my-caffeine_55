@@ -1,10 +1,9 @@
 import { useGetCallerUserProfile } from '../../hooks/useQueries';
 import { BrandHeader } from '../branding/BrandHeader';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Globe, BarChart3, Brain, Upload } from 'lucide-react';
-import { useIsCallerAdmin } from '../../hooks/useQueries';
+import { MessageSquare, Globe, BarChart3, Brain } from 'lucide-react';
 
-type PageView = 'private-chat' | 'public-chat' | 'transparency' | 'mama-brain' | 'admin-faq';
+type PageView = 'private-chat' | 'public-chat' | 'transparency' | 'mama-brain';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,7 +13,6 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, currentPage, onNavigate }: AppLayoutProps) {
   const { data: userProfile } = useGetCallerUserProfile();
-  const { data: isAdmin } = useIsCallerAdmin();
 
   const navItems = [
     { id: 'private-chat' as PageView, label: 'گفتگوی خصوصی', icon: MessageSquare },
@@ -22,10 +20,6 @@ export function AppLayout({ children, currentPage, onNavigate }: AppLayoutProps)
     { id: 'transparency' as PageView, label: 'شفافیت', icon: BarChart3 },
     { id: 'mama-brain' as PageView, label: 'مغز ماما', icon: Brain },
   ];
-
-  if (isAdmin) {
-    navItems.push({ id: 'admin-faq' as PageView, label: 'FAQ Import', icon: Upload });
-  }
 
   return (
     <div 

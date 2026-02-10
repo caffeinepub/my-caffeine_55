@@ -1,12 +1,13 @@
 /**
  * Persian text normalization and formatting utilities
  * Provides deterministic text refinement for consistent Persian output
+ * Extended to support multi-section structured answers
  */
 
 /**
  * Normalize Persian text spacing and punctuation
  * - Ensures consistent spacing around punctuation marks
- * - Collapses multiple spaces/newlines
+ * - Collapses multiple spaces/newlines (max 2 for structured content)
  * - Applies نیم‌فاصله (ZWNJ) where appropriate
  */
 export function normalizePersianText(text: string): string {
@@ -15,14 +16,14 @@ export function normalizePersianText(text: string): string {
   // Collapse multiple spaces into one
   normalized = normalized.replace(/\s+/g, ' ');
 
-  // Collapse multiple newlines (max 2)
+  // Collapse multiple newlines (max 2 for structured answers)
   normalized = normalized.replace(/\n{3,}/g, '\n\n');
 
   // Ensure space after punctuation marks (if not already present)
-  normalized = normalized.replace(/([.!?،؛])([^\s])/g, '$1 $2');
+  normalized = normalized.replace(/([.!?،؛:])([^\s\n])/g, '$1 $2');
 
   // Remove space before punctuation marks
-  normalized = normalized.replace(/\s+([.!?،؛])/g, '$1');
+  normalized = normalized.replace(/\s+([.!?،؛:])/g, '$1');
 
   // Apply ZWNJ (نیم‌فاصله) for common compound words
   // می + verb
@@ -30,6 +31,10 @@ export function normalizePersianText(text: string): string {
   
   // نمی + verb
   normalized = normalized.replace(/نمی\s+([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])/g, 'نمی‌$1');
+
+  // Preserve structured list markers (bullets, numbers)
+  // Ensure consistent spacing after list markers
+  normalized = normalized.replace(/([•✓✗→۱۲۳۴۵۶۷۸۹۰])\s*/g, '$1 ');
 
   // Trim leading/trailing whitespace
   normalized = normalized.trim();

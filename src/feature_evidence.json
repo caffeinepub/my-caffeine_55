@@ -2,10 +2,54 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-an-opt-in-privacy-preserving-learning-capability-that-allows-a-user-s-private-chat-messages-to-contribute-only-anonymized-non-reversible-aggregate-signals-to-a-global-public-memory-store-without-storing-or-exposing-any-private-raw-text-and-without-allowing-other-users-to-retrieve-any-user-specific-private-information",
-      "featureTitle": "Add an opt-in “privacy-preserving learning” capability that allows a user’s private-chat messages to contribute only anonymized, non-reversible aggregate signals to a global public memory store, without storing or exposing any private raw text and without allowing other users to retrieve any user-specific private information.",
+      "featureId": "feature-implement-a-fully-automatic-angle-expansion-layer-inside-the-mama-response-pipeline-so-mama-can-generate-and-choose-a-new-response-angle-without-the-user-specifying-what-angles-to-add",
+      "featureTitle": "Implement a fully automatic “angle expansion” layer inside the Mama response pipeline so Mama can generate and choose a new response angle without the user specifying what angles to add.",
+      "files": [
+        "frontend/src/lib/mamaAngles.ts",
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/pages/ChatPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-strengthen-mama-s-q-a-pattern-squared-behavior-by-increasing-response-depth-and-creative-structure-automatically-without-adding-external-ai-llm-dependencies-while-keeping-responses-safe-consistent-and-non-repetitive",
+      "featureTitle": "Strengthen Mama’s “Q&A pattern squared” behavior by increasing response depth and creative structure automatically (without adding external AI/LLM dependencies), while keeping responses safe, consistent, and non-repetitive.",
+      "files": [
+        "frontend/src/lib/mamaDepthTemplates.ts",
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/utils/persianText.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-make-mama-s-self-improvement-loop-more-explicit-and-robust-by-expanding-privacy-preserving-learning-signals-and-using-them-to-influence-deterministic-angle-template-selection-over-time-no-raw-private-text-stored",
+      "featureTitle": "Make Mama’s self-improvement loop more explicit and robust by expanding privacy-preserving learning signals and using them to influence deterministic angle/template selection over time (no raw private text stored).",
       "files": [
         "frontend/src/hooks/useQueries.ts",
+        "frontend/src/lib/mamaPipeline.ts",
+        "frontend/src/lib/mamaSelectionBias.ts",
         "frontend/src/pages/ChatPage.tsx",
         "frontend/src/utils/privacyPreservingSignals.ts"
       ],
@@ -18,58 +62,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-33"
+        "REQ-3"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-extend-the-mama-pipeline-frontend-src-lib-mamapipeline-ts-to-reduce-repetitive-predefined-replies-by-adding-a-deterministic-anti-repetition-strategy-that-avoids-returning-the-same-response-template-repeatedly-in-the-same-chat-session-when-repetition-is-detected-the-pipeline-must-switch-to-a-different-deterministic-template-and-include-the-persian-new-angle-trigger-phrase-in-the-response-content",
-      "featureTitle": "Extend the Mama pipeline (frontend/src/lib/mamaPipeline.ts) to reduce repetitive predefined replies by adding a deterministic anti-repetition strategy that avoids returning the same response template repeatedly in the same chat session; when repetition is detected, the pipeline must switch to a different deterministic template and include the Persian “new angle” trigger phrase in the response content.",
-      "files": [
-        "frontend/src/lib/mamaPipeline.ts",
-        "frontend/src/pages/ChatPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-35"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-wire-the-opt-in-learning-flow-into-the-chat-ui-provide-a-simple-user-control-on-the-private-chat-page-to-enable-disable-contributing-anonymized-learning-signals-and-when-enabled-ensure-private-messages-trigger-anonymized-signal-ingestion-to-the-backend-after-keyboard-correction-normalization-without-sending-any-raw-private-text-as-part-of-the-signal-payload",
-      "featureTitle": "Wire the opt-in learning flow into the chat UI: provide a simple user control on the Private Chat page to enable/disable contributing anonymized learning signals, and when enabled, ensure private messages trigger anonymized-signal ingestion to the backend after keyboard correction/normalization (without sending any raw private text as part of the signal payload).",
-      "files": [
-        "frontend/src/components/chat/PrivacyPreservingLearningToggle.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/ChatPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-36"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-use-the-aggregated-public-memory-signals-from-the-backend-as-an-additional-deterministic-input-to-response-selection-in-public-chat-to-improve-variety-grounding-without-leaking-private-information-this-must-not-display-or-reference-any-private-chat-origin-in-the-ui-or-in-mama-s-response-text",
-      "featureTitle": "Use the aggregated public memory signals (from the backend) as an additional deterministic input to response selection in Public Chat to improve variety/grounding without leaking private information; this must not display or reference any private-chat origin in the UI or in Mama’s response text.",
+      "featureId": "feature-extend-the-transparency-page-to-include-high-level-self-improvement-indicators-derived-from-existing-aggregate-statistics-e-g-current-aggregate-variety-seed-and-a-small-table-of-top-anonymized-categories-without-exposing-any-private-message-content",
+      "featureTitle": "Extend the Transparency page to include high-level self-improvement indicators derived from existing aggregate statistics (e.g., current aggregate variety seed and a small table of top anonymized categories), without exposing any private message content.",
       "files": [
         "frontend/src/hooks/useQueries.ts",
-        "frontend/src/lib/mamaPipeline.ts",
-        "frontend/src/pages/ChatPage.tsx"
+        "frontend/src/pages/TransparencyPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -80,7 +82,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-37"
+        "REQ-4"
       ],
       "confidence": "high"
     }

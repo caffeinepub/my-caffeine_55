@@ -6,12 +6,11 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ChatPage } from './pages/ChatPage';
 import { TransparencyPage } from './pages/TransparencyPage';
 import { MamaBrainPage } from './pages/MamaBrainPage';
-import { AdminFaqImportPage } from './pages/admin/AdminFaqImportPage';
 import { useState } from 'react';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 
-type PageView = 'private-chat' | 'public-chat' | 'transparency' | 'mama-brain' | 'admin-faq';
+type PageView = 'private-chat' | 'public-chat' | 'transparency' | 'mama-brain';
 
 export default function App() {
   const { identity } = useInternetIdentity();
@@ -39,7 +38,6 @@ export default function App() {
         {currentPage === 'public-chat' && <ChatPage mode="public" />}
         {currentPage === 'transparency' && <TransparencyPage />}
         {currentPage === 'mama-brain' && <MamaBrainPage />}
-        {currentPage === 'admin-faq' && <AdminFaqImportPage />}
       </AppLayout>
       <Toaster />
     </ThemeProvider>

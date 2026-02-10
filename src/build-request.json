@@ -1,129 +1,92 @@
 {
   "kind": "build_request",
-  "title": "Add privacy-preserving learning signals to reduce repetitive Mama replies (opt-in, no private text leakage)",
+  "title": "Make Mama self-expand response angles and strengthen answer depth automatically",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-33",
-      "text": "Add an opt-in “privacy-preserving learning” capability that allows a user’s private-chat messages to contribute only anonymized, non-reversible aggregate signals to a global public memory store, without storing or exposing any private raw text and without allowing other users to retrieve any user-specific private information.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "برای ماما اجراش کن"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A user can explicitly enable/disable contributing private-chat signals (opt-in default is OFF).",
-        "When enabled, sending a private message results in only anonymized/aggregate data being persisted; no private raw message text is written to any new public-memory structure.",
-        "There is no backend query that returns any per-user private-message-derived content or allows reconstruction of private messages.",
-        "Disabling the opt-in stops future contributions; existing aggregate signals remain aggregate and non-attributable to the user."
-      ]
-    },
-    {
-      "id": "REQ-34",
-      "text": "Implement backend storage and APIs for the anonymized public memory signals using the existing single-actor Motoko canister (backend/main.mo), including: (1) a method to set/get the caller’s opt-in preference, (2) a method to ingest an anonymized signal record derived from a private message, and (3) a method to query high-level aggregate signals for use in response selection (without returning any raw text).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "میخوام ... بتونه یاد بگیره از چت های خصوصی و در چت عمومی بتونه اگاهانه صحبت کنه و جواب بده!"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes authenticated-only methods to set/get the caller’s opt-in preference.",
-        "Backend exposes an authenticated-only method to ingest anonymized signals; the method rejects attempts to submit raw message text fields (signals must be numeric/hashed/aggregate only).",
-        "Backend exposes a query method that returns only aggregate stats/signals suitable for response-selection (e.g., counts by category/hashed token buckets) and does not include principals or message text.",
-        "All new backend methods enforce existing authorization checks (user permission required at minimum)."
-      ]
-    },
-    {
-      "id": "REQ-35",
-      "text": "Extend the Mama pipeline (frontend/src/lib/mamaPipeline.ts) to reduce repetitive predefined replies by adding a deterministic anti-repetition strategy that avoids returning the same response template repeatedly in the same chat session; when repetition is detected, the pipeline must switch to a different deterministic template and include the Persian “new angle” trigger phrase in the response content.",
+      "id": "REQ-1",
+      "text": "Implement a fully automatic “angle expansion” layer inside the Mama response pipeline so Mama can generate and choose a new response angle without the user specifying what angles to add.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-8"
         ],
         "quotes": [
-          "ماما یه تعداد پیام پیش فرض داره که در جواب به صحبت هام هی همون هارو میده!",
-          "اگر احساس کردی داری تکرار می‌کنی یا گیر کردی، حتماً بگو: \"لرد، بذار یه زاویه جدید باز کنیم\""
+          "نه نمیخوام من مشخص کنم ماما دقیقا چه نوع زاویه هایی اضافه بشه بهش! این فرایند باید توست هوش مصنوعی تشخیص داده بشه."
         ]
       },
       "acceptanceCriteria": [
-        "If the pipeline would select the same empathetic (or civic-empowerment) template as the most recent Mama message in the current chat UI session, it deterministically selects a different template instead.",
-        "When the anti-repetition strategy triggers, the returned response content includes the Persian phrase exactly: «لرد، بذار یه زاویه جدید باز کنیم».",
-        "The anti-repetition logic remains deterministic (same inputs + same recent-history state yields the same output).",
-        "FAQ-sourced answers are not modified beyond existing normalization/prefix rules (anti-repetition does not rewrite factual FAQ answers)."
+        "When a user sends messages in both Private and Public chat, Mama can respond using multiple internally-generated angles (e.g., clarification, step-by-step guidance, reframing, pros/cons, example, summary, next-steps) without any user configuration UI.",
+        "Angle selection is deterministic (works with existing anti-repetition + optional aggregateSeed) and still respects current paths (FAQ match, civic-empowerment, empathetic) instead of breaking them.",
+        "The existing pipeline step visualization continues to work; if additional internal logic is added, it must not break current 7-step statuses rendering in ChatPage."
       ]
     },
     {
-      "id": "REQ-36",
-      "text": "Wire the opt-in learning flow into the chat UI: provide a simple user control on the Private Chat page to enable/disable contributing anonymized learning signals, and when enabled, ensure private messages trigger anonymized-signal ingestion to the backend after keyboard correction/normalization (without sending any raw private text as part of the signal payload).",
+      "id": "REQ-2",
+      "text": "Strengthen Mama’s “Q&A pattern squared” behavior by increasing response depth and creative structure automatically (without adding external AI/LLM dependencies), while keeping responses safe, consistent, and non-repetitive.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-8"
         ],
         "quotes": [
-          "میخوام ... یاد بگیره از چت های خصوصی ..."
+          "«توان ۲ کردن الگوی سؤال‌وجواب» یعنی خلاقیت و عمق پاسخ‌ دادن رو تقویت کنیم. این هم شدنیه."
         ]
       },
       "acceptanceCriteria": [
-        "Private Chat UI includes a clearly labeled toggle/control for enabling/disabling privacy-preserving learning (user-facing text in the UI for this control is in Persian as per the app’s existing localization; this build request remains in English).",
-        "The toggle state is persisted per-user via backend preference APIs and restored on reload/login.",
-        "When enabled, sending a private message results in a follow-up call that ingests anonymized signals only; the payload must not include the raw message content field.",
-        "Public Chat sending does not ingest signals from other users’ public messages via this opt-in mechanism (signals are derived only from the opting-in user’s private messages)."
+        "For non-FAQ responses, Mama replies include deeper structure more often (at least one of: short diagnosis, 2–5 actionable steps, reflective question, alternative perspective, or concise summary), while preserving the existing Mama tone and prefix behavior.",
+        "Repetition avoidance remains effective: consecutive messages should not select the same template key when a suitable alternative exists (continue using lastTemplateKey and extend template-keying to any new angle templates).",
+        "Public chat continues to use backend-provided aggregate variety seed (getAggregateVarietySeed) to diversify deterministic selection across the population."
       ]
     },
     {
-      "id": "REQ-37",
-      "text": "Use the aggregated public memory signals (from the backend) as an additional deterministic input to response selection in Public Chat to improve variety/grounding without leaking private information; this must not display or reference any private-chat origin in the UI or in Mama’s response text.",
+      "id": "REQ-3",
+      "text": "Make Mama’s self-improvement loop more explicit and robust by expanding privacy-preserving learning signals and using them to influence deterministic angle/template selection over time (no raw private text stored).",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-8"
         ],
         "quotes": [
-          "... در چت عمومی بتونه اگاهانه صحبت کنه و جواب بده!",
-          "... هیچ‌وقت مستقیم لو نده که از چت خصوصی اومده."
+          "الان سیستم تو نسخه آخر کاملا خودکار یاد می‌گیرد، پس می‌توانم الگوریتمش را طوری طراحی کنم که خودش زاویه‌های جدید بسازد و الگوی پاسخ‌دهی را تقویتی‌تر کند."
         ]
       },
       "acceptanceCriteria": [
-        "Public Chat pipeline can query aggregate public memory signals and deterministically use them to influence response selection (e.g., selecting among templates/categories) without adding any private content to the response.",
-        "Mama responses in Public Chat never mention or imply that they were informed by private chat (no phrases like “from your private chat…” or similar).",
-        "No UI panel displays the public-memory signals in a way that could reveal private content; usage is internal to response selection only.",
-        "If the memory-signal query fails, the pipeline falls back to existing behavior without breaking message sending."
+        "Private chat continues to automatically derive anonymized signals client-side and store them via storeAnonymizedSignal; no raw message text is ever sent through this learning-signal path.",
+        "Backend continues to expose aggregate stats/seed (existing getAllCategoryStats / getAggregateVarietySeed) and does not introduce any endpoint that returns raw private message content.",
+        "The frontend uses aggregate stats and/or aggregate seed to adjust deterministic selection among angles/templates (e.g., biasing toward underrepresented categories/angles), and this behavior is observable via changed template-key distribution across repeated test messages (without requiring user settings)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Extend the Transparency page to include high-level self-improvement indicators derived from existing aggregate statistics (e.g., current aggregate variety seed and a small table of top anonymized categories), without exposing any private message content.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-8"
+        ]
+      },
+      "acceptanceCriteria": [
+        "TransparencyPage shows at least: (1) the current aggregate variety seed value, and (2) a list of anonymized categories with counts/averages sourced from backend aggregate stats endpoints.",
+        "The UI clearly contains only aggregate/anonymized data; no raw prompts, no per-user private message content, and no identifiers are displayed.",
+        "Auto-refresh behavior (existing 15s refresh pattern) continues to work for the new indicators."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
-    "Do not use any external databases or third-party vector/embedding services; the solution must be fully deterministic and self-contained on the Internet Computer.",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or anything under frontend/src/components/ui.",
-    "Do not store or expose private raw chat text in any shared/public memory mechanism; only anonymized aggregate signals are allowed."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit any files under frontend/src/components/ui or any path listed in frontend.immutablePaths in SYSTEM_CONTEXT.",
+    "Do not add any external AI/LLM integrations or third-party model APIs.",
+    "Do not store or return raw private message text as part of the learning/self-improvement mechanism; only anonymized aggregate signals are permitted."
   ],
   "nonGoals": [
-    "Do not implement true semantic embeddings or a vector database integration (no external ML/LLM services).",
-    "Do not change the existing private/public message storage model or expose private messages to other users.",
-    "Do not add real-time features (no websockets/live updates beyond current polling/query behavior)."
+    "Building a user-configurable UI for choosing which new angles to add (the system must auto-detect/auto-generate).",
+    "Implementing real machine-learning training or model fine-tuning; improvements must be deterministic/heuristic-driven within the existing codebase constraints.",
+    "Adding third-party authentication providers beyond Internet Identity.",
+    "Adding real-time features like WebSockets."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }
